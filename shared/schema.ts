@@ -24,8 +24,6 @@ export const appBaseUrls = [
   "https://axevil.app.link/tc"
 ] as const;
 
-export const webinarBaseUrl = "https://t.me/the_axevil_bot" as const;
-
 // Page types for deep linking
 export const pageTypes = [
   "idea",
@@ -55,10 +53,4 @@ export const appLinkSchema = z.object({
   initialInnerPage: z.enum(innerPageTypes).optional(),
 });
 
-// Schema for webinar link parameters
-export const webinarLinkSchema = z.object({
-  utmTag: z.string().regex(utmPattern, "Допускаются только буквы, цифры, подчеркивание и дефис"),
-});
-
 export type AppLinkParams = z.infer<typeof appLinkSchema>;
-export type WebinarLinkParams = z.infer<typeof webinarLinkSchema>;
