@@ -26,15 +26,17 @@ export default function Home() {
 
   const generateLink = (data: AppLinkParams) => {
     if (!data.campaign) return "";
-    const params = new URLSearchParams();
-    params.append("~campaign", data.campaign);
-    if (data.feature) params.append("~feature", data.feature);
-    if (data.pageType) params.append("page_type", data.pageType);
+
+    const params = [] as string[];
+    params.push(`~campaign=${data.campaign}`);
+    if (data.feature) params.push(`~feature=${data.feature}`);
+    if (data.pageType) params.push(`page_type=${data.pageType}`);
     if (data.pageId && ["idea", "news", "order"].includes(data.pageType || "")) {
-      params.append("page_id", data.pageId);
+      params.push(`page_id=${data.pageId}`);
     }
-    if (data.initialInnerPage) params.append("initial_inner_page", data.initialInnerPage);
-    return `${data.baseUrl}?${params.toString()}`;
+    if (data.initialInnerPage) params.push(`initial_inner_page=${data.initialInnerPage}`);
+
+    return `${data.baseUrl}?${params.join("&")}`;
   };
 
   const copyToClipboard = async (text: string) => {
