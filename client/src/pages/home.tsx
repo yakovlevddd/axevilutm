@@ -132,13 +132,14 @@ export default function Home() {
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
                           Кампания
+                          <HelpCircle className="w-4 h-4 text-muted-foreground" />
                           <TooltipProvider>
                             <Tooltip>
-                              <TooltipTrigger>
-                                <HelpCircle className="w-4 h-4" />
+                              <TooltipTrigger asChild>
+                                <span />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Название кампании для отслеживания источника (например, post_100823)</p>
+                                <p>Помогает определить, в какой именно единице контента размещена ссылка. Например, для Telegram это может быть дата или название поста (post_100823 или post_champions_1008)</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -158,13 +159,14 @@ export default function Home() {
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
                           Дополнительный параметр (необязательно)
+                          <HelpCircle className="w-4 h-4 text-muted-foreground" />
                           <TooltipProvider>
                             <Tooltip>
-                              <TooltipTrigger>
-                                <HelpCircle className="w-4 h-4" />
+                              <TooltipTrigger asChild>
+                                <span />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Конкретное место размещения (например, button_top)</p>
+                                <p>Позволяет более точно определить место размещения ссылки. Например, в одной PDF презентации есть две кнопки, тогда здесь можно указать пояснение в виде page1 или last_page</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -254,13 +256,14 @@ export default function Home() {
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
                           UTM-метка
+                          <HelpCircle className="w-4 h-4 text-muted-foreground" />
                           <TooltipProvider>
                             <Tooltip>
-                              <TooltipTrigger>
-                                <HelpCircle className="w-4 h-4" />
+                              <TooltipTrigger asChild>
+                                <span />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Метка для отслеживания источника трафика (только буквы, цифры и дефис)</p>
+                                <p>UTM-метка для отслеживания источника трафика. Указывается английскими буквами без специальных символов и пробелов. Допускается использование цифр и знака дефис ( - )</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
