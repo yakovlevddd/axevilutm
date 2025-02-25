@@ -76,7 +76,7 @@ export default function Home() {
           </CardHeader>
           <CardContent className="space-y-6">
             <RadioGroup
-              defaultValue="app"
+              value={linkType}
               onValueChange={(value) => setLinkType(value as "app" | "webinar")}
               className="flex space-x-4"
             >
@@ -132,11 +132,10 @@ export default function Home() {
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
                           Кампания
-                          <HelpCircle className="w-4 h-4 text-muted-foreground" />
                           <TooltipProvider>
-                            <Tooltip>
+                            <Tooltip delayDuration={0}>
                               <TooltipTrigger asChild>
-                                <span />
+                                <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p>Помогает определить, в какой именно единице контента размещена ссылка. Например, для Telegram это может быть дата или название поста (post_100823 или post_champions_1008)</p>
@@ -159,11 +158,10 @@ export default function Home() {
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
                           Дополнительный параметр (необязательно)
-                          <HelpCircle className="w-4 h-4 text-muted-foreground" />
                           <TooltipProvider>
-                            <Tooltip>
+                            <Tooltip delayDuration={0}>
                               <TooltipTrigger asChild>
-                                <span />
+                                <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p>Позволяет более точно определить место размещения ссылки. Например, в одной PDF презентации есть две кнопки, тогда здесь можно указать пояснение в виде page1 или last_page</p>
@@ -256,11 +254,10 @@ export default function Home() {
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
                           UTM-метка
-                          <HelpCircle className="w-4 h-4 text-muted-foreground" />
                           <TooltipProvider>
-                            <Tooltip>
+                            <Tooltip delayDuration={0}>
                               <TooltipTrigger asChild>
-                                <span />
+                                <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p>UTM-метка для отслеживания источника трафика. Указывается английскими буквами без специальных символов и пробелов. Допускается использование цифр и знака дефис ( - )</p>
