@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,11 +36,6 @@ export default function Home() {
 
   const handleTypeChange = (value: string) => {
     setLinkType(value as "app" | "webinar");
-    if (value === "app") {
-      webinarForm.reset();
-    } else {
-      appForm.reset();
-    }
   };
 
   const generateAppLink = (data: AppLinkParams) => {
