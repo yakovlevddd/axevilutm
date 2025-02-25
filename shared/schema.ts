@@ -53,4 +53,10 @@ export const appLinkSchema = z.object({
   initialInnerPage: z.enum(innerPageTypes).optional(),
 });
 
+// Schema for webinar link parameters
+export const webinarLinkSchema = z.object({
+  utmTag: z.string().regex(utmPattern, "Допускаются только буквы, цифры, подчеркивание и дефис"),
+});
+
 export type AppLinkParams = z.infer<typeof appLinkSchema>;
+export type WebinarLinkParams = z.infer<typeof webinarLinkSchema>;
