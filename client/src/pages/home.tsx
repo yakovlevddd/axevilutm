@@ -29,8 +29,7 @@ export default function Home() {
   const webinarForm = useForm<WebinarLinkParams>({
     resolver: zodResolver(webinarLinkSchema),
     defaultValues: {
-      prefix: "",
-      source: ""
+      utmTag: ""
     }
   });
 
@@ -45,7 +44,7 @@ export default function Home() {
   };
 
   const generateWebinarLink = (data: WebinarLinkParams) => {
-    return `https://t.me/axevil_events_bot?start=web_${data.prefix}-${data.source}`;
+    return `https://t.me/the_axevil_bot?start=${data.utmTag}`;
   };
 
   const copyToClipboard = async (text: string) => {
@@ -53,8 +52,8 @@ export default function Home() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     toast({
-      title: "Link copied!",
-      description: "The generated link has been copied to your clipboard."
+      title: "Ссылка скопирована!",
+      description: "Сгенерированная ссылка скопирована в буфер обмена."
     });
   };
 
@@ -69,7 +68,7 @@ export default function Home() {
         <Card>
           <CardHeader>
             <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              UTM Link Generator
+              Генератор UTM-ссылок
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -96,11 +95,11 @@ export default function Home() {
                     name="baseUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Base URL</FormLabel>
+                        <FormLabel>Где публикуется ссылка</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select base URL" />
+                              <SelectValue placeholder="Выберите площадку" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -129,20 +128,20 @@ export default function Home() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
-                          Campaign
+                          Кампания
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
                                 <HelpCircle className="w-4 h-4" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Campaign name to track the source (e.g., post_100823)</p>
+                                <p>Название кампании для отслеживания источника (например, post_100823)</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="e.g., post_100823" />
+                          <Input {...field} placeholder="Например: post_100823" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -155,20 +154,20 @@ export default function Home() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
-                          Feature (Optional)
+                          Дополнительный параметр (необязательно)
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
                                 <HelpCircle className="w-4 h-4" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Specific placement or feature (e.g., button_top)</p>
+                                <p>Конкретное место размещения (например, button_top)</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="e.g., button_top" />
+                          <Input {...field} placeholder="Например: button_top" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -180,11 +179,11 @@ export default function Home() {
                     name="pageType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Page Type (Optional)</FormLabel>
+                        <FormLabel>Тип страницы (необязательно)</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select page type" />
+                              <SelectValue placeholder="Выберите тип страницы" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -205,9 +204,9 @@ export default function Home() {
                       name="pageId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Page ID</FormLabel>
+                          <FormLabel>ID страницы</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Enter page ID" />
+                            <Input {...field} placeholder="Введите ID страницы" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -221,11 +220,11 @@ export default function Home() {
                       name="initialInnerPage"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Initial Inner Page</FormLabel>
+                          <FormLabel>Начальная вкладка</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select inner page" />
+                                <SelectValue placeholder="Выберите вкладку" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -247,50 +246,24 @@ export default function Home() {
                 <form className="space-y-4">
                   <FormField
                     control={webinarForm.control}
-                    name="prefix"
+                    name="utmTag"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
-                          Webinar Prefix
+                          UTM-метка
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
                                 <HelpCircle className="w-4 h-4" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Webinar identifier (e.g., uzum051023)</p>
+                                <p>Метка для отслеживания источника трафика (только буквы, цифры и дефис)</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="e.g., uzum051023" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={webinarForm.control}
-                    name="source"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          Source
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <HelpCircle className="w-4 h-4" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Traffic source (e.g., tgmain)</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="e.g., tgmain" />
+                          <Input {...field} placeholder="Например: webinar_post_100823" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -302,7 +275,7 @@ export default function Home() {
 
             {generatedLink && (
               <div className="mt-6 space-y-2">
-                <div className="font-medium">Generated Link:</div>
+                <div className="font-medium">Сгенерированная ссылка:</div>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 p-2 bg-muted rounded-md break-all">
                     {generatedLink}

@@ -19,10 +19,12 @@ export const appBaseUrls = [
   "https://axevil.app.link/eml",
   "https://axevil.app.link/pres",
   "https://axevil.app.link/event",
-  "https://axevil.app.link/art"
+  "https://axevil.app.link/art",
+  "https://axevil.app.link/ai",
+  "https://axevil.app.link/tc"
 ] as const;
 
-export const webinarBaseUrl = "https://t.me/axevil_events_bot" as const;
+export const webinarBaseUrl = "https://t.me/the_axevil_bot" as const;
 
 // Page types for deep linking
 export const pageTypes = [
@@ -46,8 +48,8 @@ export const innerPageTypes = [
 // Schema for app link parameters
 export const appLinkSchema = z.object({
   baseUrl: z.enum(appBaseUrls),
-  campaign: z.string().regex(utmPattern, "Only letters, numbers, underscore and hyphen allowed"),
-  feature: z.string().regex(utmPattern, "Only letters, numbers, underscore and hyphen allowed").optional(),
+  campaign: z.string().regex(utmPattern, "Допускаются только буквы, цифры, подчеркивание и дефис"),
+  feature: z.string().regex(utmPattern, "Допускаются только буквы, цифры, подчеркивание и дефис").optional(),
   pageType: z.enum(pageTypes).optional(),
   pageId: z.string().optional(),
   initialInnerPage: z.enum(innerPageTypes).optional(),
@@ -55,8 +57,7 @@ export const appLinkSchema = z.object({
 
 // Schema for webinar link parameters
 export const webinarLinkSchema = z.object({
-  prefix: z.string().regex(/^[a-zA-Z0-9]+$/, "Only letters and numbers allowed"),
-  source: z.string().regex(utmPattern, "Only letters, numbers, underscore and hyphen allowed"),
+  utmTag: z.string().regex(utmPattern, "Допускаются только буквы, цифры, подчеркивание и дефис"),
 });
 
 export type AppLinkParams = z.infer<typeof appLinkSchema>;
