@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Copy, Check, HelpCircle } from "lucide-react";
@@ -34,16 +34,18 @@ export default function Home() {
   });
 
   const generateAppLink = (data: AppLinkParams) => {
+    if (!data.campaign) return "";
     const params = new URLSearchParams();
     params.append("~campaign", data.campaign);
     if (data.feature) params.append("~feature", data.feature);
     if (data.pageType) params.append("page_type", data.pageType);
-    if (data.pageId) params.append("page_id", data.pageId);
+    if (data.pageId && ["idea", "news", "order"].includes(data.pageType || "")) params.append("page_id", data.pageId);
     if (data.initialInnerPage) params.append("initial_inner_page", data.initialInnerPage);
     return `${data.baseUrl}?${params.toString()}`;
   };
 
   const generateWebinarLink = (data: WebinarLinkParams) => {
+    if (!data.utmTag) return "";
     return `https://t.me/the_axevil_bot?start=${data.utmTag}`;
   };
 
@@ -57,10 +59,11 @@ export default function Home() {
     });
   };
 
+  // Подписываемся на изменения формы для автоматической генерации ссылки
   const currentForm = linkType === "app" ? appForm : webinarForm;
   const generatedLink = linkType === "app" 
-    ? (appForm.formState.isValid ? generateAppLink(appForm.getValues()) : "") 
-    : (webinarForm.formState.isValid ? generateWebinarLink(webinarForm.getValues()) : "");
+    ? generateAppLink(appForm.watch())
+    : generateWebinarLink(webinarForm.watch());
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted p-6">
@@ -198,7 +201,7 @@ export default function Home() {
                     )}
                   />
 
-                  {appForm.watch("pageType") && (
+                  {appForm.watch("pageType") && ["idea", "news", "order"].includes(appForm.watch("pageType")) && (
                     <FormField
                       control={appForm.control}
                       name="pageId"
@@ -273,13 +276,13 @@ export default function Home() {
               </Form>
             )}
 
-            {generatedLink && (
-              <div className="mt-6 space-y-2">
-                <div className="font-medium">Сгенерированная ссылка:</div>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 p-2 bg-muted rounded-md break-all">
-                    {generatedLink}
-                  </code>
+            <div className="space-y-2">
+              <div className="font-medium">Сгенерированная ссылка:</div>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 p-2 bg-muted rounded-md break-all">
+                  {generatedLink || "Заполните необходимые поля для генерации ссылки"}
+                </code>
+                {generatedLink && (
                   <Button
                     variant="outline"
                     size="icon"
@@ -291,9 +294,9 @@ export default function Home() {
                       <Copy className="h-4 w-4" />
                     )}
                   </Button>
-                </div>
+                )}
               </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       </div>
