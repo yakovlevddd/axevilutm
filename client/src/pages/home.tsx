@@ -33,6 +33,15 @@ export default function Home() {
     }
   });
 
+  // Reset forms when switching between types
+  useEffect(() => {
+    if (linkType === "app") {
+      webinarForm.reset();
+    } else {
+      appForm.reset();
+    }
+  }, [linkType]);
+
   const generateAppLink = (data: AppLinkParams) => {
     if (!data.campaign) return "";
     const params = new URLSearchParams();
@@ -59,7 +68,7 @@ export default function Home() {
     });
   };
 
-  // Подписываемся на изменения формы для автоматической генерации ссылки
+  // Get current form and generated link based on type
   const currentForm = linkType === "app" ? appForm : webinarForm;
   const generatedLink = linkType === "app" 
     ? generateAppLink(appForm.watch())
