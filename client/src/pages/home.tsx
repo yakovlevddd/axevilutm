@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Copy, Check, HelpCircle } from "lucide-react";
@@ -22,7 +22,7 @@ export default function Home() {
     resolver: zodResolver(appLinkSchema),
     defaultValues: {
       baseUrl: BASE_URL_GROUPS[0].urls[0].url,
-      campaign: "",
+      campaign: ""
     }
   });
 
@@ -33,14 +33,14 @@ export default function Home() {
     }
   });
 
-  // Reset forms when switching between types
-  useEffect(() => {
-    if (linkType === "app") {
+  const handleTypeChange = (value: string) => {
+    setLinkType(value as "app" | "webinar");
+    if (value === "app") {
       webinarForm.reset();
     } else {
       appForm.reset();
     }
-  }, [linkType]);
+  };
 
   const generateAppLink = (data: AppLinkParams) => {
     if (!data.campaign) return "";
@@ -68,7 +68,6 @@ export default function Home() {
     });
   };
 
-  // Get current form and generated link based on type
   const currentForm = linkType === "app" ? appForm : webinarForm;
   const generatedLink = linkType === "app" 
     ? generateAppLink(appForm.watch())
@@ -86,7 +85,7 @@ export default function Home() {
           <CardContent className="space-y-6">
             <RadioGroup
               value={linkType}
-              onValueChange={(value) => setLinkType(value as "app" | "webinar")}
+              onValueChange={handleTypeChange}
               className="flex space-x-4"
             >
               {LINK_TYPES.map(type => (
