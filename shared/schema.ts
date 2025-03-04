@@ -21,7 +21,7 @@ export const appBaseUrls = [
   "https://axevil.app.link/event",
   "https://axevil.app.link/art",
   "https://axevil.app.link/ai",
-  "https://axevil.app.link/tc",
+  "https://axevil.app.link/tc"
 ] as const;
 
 // Page types for deep linking
@@ -33,33 +33,24 @@ export const pageTypes = [
   "profile",
   "assistant",
   "referral",
-  "axevil-investments",
+  "axevil-investments"
 ] as const;
 
 // Inner page types for portfolio
-export const innerPageTypes = ["updates", "rounds", "documents"] as const;
+export const innerPageTypes = [
+  "updates",
+  "rounds", 
+  "documents"
+] as const;
 
 // Schema for app link parameters
 export const appLinkSchema = z.object({
   baseUrl: z.enum(appBaseUrls),
-  campaign: z
-    .string()
-    .regex(utmPattern, "Допускаются только буквы, цифры и дефис"),
-  feature: z
-    .string()
-    .regex(utmPattern, "Допускаются только буквы, цифры и дефис")
-    .optional(),
+  campaign: z.string().regex(utmPattern, "Допускаются только буквы, цифры, подчеркивание и дефис"),
+  feature: z.string().regex(utmPattern, "Допускаются только буквы, цифры, подчеркивание и дефис").optional(),
   pageType: z.enum(pageTypes).optional(),
   pageId: z.string().optional(),
   initialInnerPage: z.enum(innerPageTypes).optional(),
 });
 
-// Обновленная схема для вебинарных ссылок
-export const webinarLinkSchema = z.object({
-  postfix: z
-    .string()
-    .regex(/^[a-zA-Z0-9-]+$/, "Допускаются только буквы, цифры и дефис"),
-});
-
 export type AppLinkParams = z.infer<typeof appLinkSchema>;
-export type WebinarLinkParams = z.infer<typeof webinarLinkSchema>;
