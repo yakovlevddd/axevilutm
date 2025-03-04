@@ -1,11 +1,6 @@
 import { SiTelegram, SiYoutube, SiInstagram } from "react-icons/si";
 import { Link2 } from "lucide-react";
 
-export const LINK_TYPES = [
-  { id: "app", label: "Скачивание приложения" },
-  { id: "webinar", label: "Регистрация на вебинар" }
-] as const;
-
 export const BASE_URL_GROUPS = [
   {
     label: "Telegram",
