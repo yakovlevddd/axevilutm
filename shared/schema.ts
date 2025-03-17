@@ -77,18 +77,12 @@ export const partnerBotScenarios = [
   "newpartner_", // Стать партнёром
 ] as const;
 
-// Сценарии для бота Клаудия
-export const claudiaBotScenarios = [
-  "start_", // Стандартный сценарий
-] as const;
-
 // Обновленная схема для телеграм-ссылок
 export const telegramLinkSchema = z.object({
   botType: z.enum(telegramBots),
   scenario: z.union([
     z.enum(webinarBotScenarios),
     z.enum(partnerBotScenarios),
-    z.enum(claudiaBotScenarios),
   ]).optional(),
   postfix: z
     .string()
