@@ -194,7 +194,7 @@ export default function Home() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="flex items-center gap-2">
-                            Тег источника
+                            Тег источника (UTM-campaign)
                             <TooltipProvider>
                               <Tooltip delayDuration={0}>
                                 <TooltipTrigger asChild>
