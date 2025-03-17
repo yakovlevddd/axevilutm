@@ -54,7 +54,43 @@ export const appLinkSchema = z.object({
   initialInnerPage: z.enum(innerPageTypes).optional(),
 });
 
-// Обновленная схема для вебинарных ссылок
+// Типы ботов Telegram
+export const telegramBots = [
+  "axevil_events_bot",
+  "axevil_partner_bot",
+  "the_axevil_bot",
+] as const;
+
+// Сценарии для бота вебинаров
+export const webinarBotScenarios = [
+  "web_", // Регистрация на вебинар
+  "webrec_", // Получить запись вебинара
+  "commit_", // Оставить заявку на консультацию
+] as const;
+
+// Сценарии для партнёрского бота
+export const partnerBotScenarios = [
+  "partnerinfo_", // Получить партнёрский отчёт
+  "getinvite_", // Сгенерировать приглашение на вебинар
+  "getpitch_", // Получить сообщение-питч
+  "commit_", // Оставить заявку на консультацию
+  "newpartner_", // Стать партнёром
+] as const;
+
+// Обновленная схема для телеграм-ссылок
+export const telegramLinkSchema = z.object({
+  botType: z.enum(telegramBots),
+  scenario: z.union([
+    z.enum(webinarBotScenarios),
+    z.enum(partnerBotScenarios),
+    z.literal(""),
+  ]).optional(),
+  postfix: z
+    .string()
+    .regex(/^[a-zA-Z0-9-]+$/, "Допускаются только буквы, цифры и дефис"),
+});
+
+// Обновленная схема для вебинарных ссылок (оставляем для обратной совместимости)
 export const webinarLinkSchema = z.object({
   postfix: z
     .string()
@@ -63,3 +99,4 @@ export const webinarLinkSchema = z.object({
 
 export type AppLinkParams = z.infer<typeof appLinkSchema>;
 export type WebinarLinkParams = z.infer<typeof webinarLinkSchema>;
+export type TelegramLinkParams = z.infer<typeof telegramLinkSchema>;
