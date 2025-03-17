@@ -40,6 +40,7 @@ import {
   telegramBots,
   webinarBotScenarios,
   partnerBotScenarios,
+  claudiaBotScenarios,
 } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -79,11 +80,11 @@ export default function Home() {
   useEffect(() => {
     // Сбрасываем сценарий при смене бота
     if (selectedBotType === "axevil_events_bot") {
-      telegramForm.setValue("scenario", "web_");
+      telegramForm.setValue("scenario", webinarBotScenarios[0]);
     } else if (selectedBotType === "axevil_partner_bot") {
-      telegramForm.setValue("scenario", "partnerinfo_");
+      telegramForm.setValue("scenario", partnerBotScenarios[0]);
     } else if (selectedBotType === "the_axevil_bot") {
-      telegramForm.setValue("scenario", "");
+      telegramForm.setValue("scenario", claudiaBotScenarios[0]);
     }
   }, [selectedBotType, telegramForm]);
 
@@ -102,12 +103,7 @@ export default function Home() {
   const generateTelegramLink = (data: TelegramLinkParams) => {
     const baseUrl = `https://t.me/${data.botType}`;
     
-    // Для бота Клаудия не используем сценарий
-    if (data.botType === "the_axevil_bot") {
-      return `${baseUrl}?start=${data.postfix}`;
-    }
-    
-    // Для остальных ботов добавляем сценарий
+    // Для всех ботов добавляем сценарий
     return `${baseUrl}?start=${data.scenario}${data.postfix}`;
   };
 
@@ -375,60 +371,62 @@ export default function Home() {
                       )}
                     />
 
-                    {selectedBotType !== "the_axevil_bot" && (
-                      <FormField
-                        control={telegramForm.control}
-                        name="scenario"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Что происходит при переходе по ссылке</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Выберите сценарий" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {selectedBotType === "axevil_events_bot" ? (
-                                  <>
-                                    <SelectItem value="web_">
-                                      Регистрация на вебинар
-                                    </SelectItem>
-                                    <SelectItem value="webrec_">
-                                      Получить запись вебинара
-                                    </SelectItem>
-                                    <SelectItem value="commit_">
-                                      Оставить заявку на консультацию
-                                    </SelectItem>
-                                  </>
-                                ) : (
-                                  <>
-                                    <SelectItem value="partnerinfo_">
-                                      Получить партнёрский отчёт
-                                    </SelectItem>
-                                    <SelectItem value="getinvite_">
-                                      Сгенерировать приглашение на вебинар
-                                    </SelectItem>
-                                    <SelectItem value="getpitch_">
-                                      Получить сообщение-питч
-                                    </SelectItem>
-                                    <SelectItem value="commit_">
-                                      Оставить заявку на консультацию
-                                    </SelectItem>
-                                    <SelectItem value="newpartner_">
-                                      Стать партнёром
-                                    </SelectItem>
-                                  </>
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </FormItem>
-                        )}
-                      />
-                    )}
+                    <FormField
+                      control={telegramForm.control}
+                      name="scenario"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Что происходит при переходе по ссылке</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Выберите сценарий" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {selectedBotType === "axevil_events_bot" ? (
+                                <>
+                                  <SelectItem value="web_">
+                                    Регистрация на вебинар
+                                  </SelectItem>
+                                  <SelectItem value="webrec_">
+                                    Получить запись вебинара
+                                  </SelectItem>
+                                  <SelectItem value="commit_">
+                                    Оставить заявку на консультацию
+                                  </SelectItem>
+                                </>
+                              ) : selectedBotType === "axevil_partner_bot" ? (
+                                <>
+                                  <SelectItem value="partnerinfo_">
+                                    Получить партнёрский отчёт
+                                  </SelectItem>
+                                  <SelectItem value="getinvite_">
+                                    Сгенерировать приглашение на вебинар
+                                  </SelectItem>
+                                  <SelectItem value="getpitch_">
+                                    Получить сообщение-питч
+                                  </SelectItem>
+                                  <SelectItem value="commit_">
+                                    Оставить заявку на консультацию
+                                  </SelectItem>
+                                  <SelectItem value="newpartner_">
+                                    Стать партнёром
+                                  </SelectItem>
+                                </>
+                              ) : (
+                                <SelectItem value="s_">
+                                  Стандартный сценарий
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
 
                     <FormField
                       control={telegramForm.control}
