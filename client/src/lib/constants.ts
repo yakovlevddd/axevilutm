@@ -30,6 +30,13 @@ export const BASE_URL_GROUPS = [
     ]
   },
   {
+    label: "WhatsApp",
+    icon: SiWhatsapp,
+    urls: [
+      { url: "https://axevil.app.link/wa", label: "Рассылки в WA-канал Axevil" }
+    ]
+  },
+  {
     label: "Остальное",
     icon: Link2,
     urls: [

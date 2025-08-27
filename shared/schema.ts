@@ -14,6 +14,7 @@ export const appBaseUrls = [
   "https://axevil.app.link/ytx",
   "https://axevil.app.link/igac",
   "https://axevil.app.link/igex",
+  "https://axevil.app.link/wa",
   "https://axevil.app.link/ntn",
   "https://axevil.app.link/web",
   "https://axevil.app.link/eml",
