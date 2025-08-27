@@ -77,6 +77,13 @@ export const partnerBotScenarios = [
   "newpartner_", // Стать партнёром
 ] as const;
 
+// Источники для telegram bot ссылок
+export const telegramSources = [
+  "tgmain", "tgpartners", "tgclaudia", "tgbot", "tgpartnersbot", "tdext", "tdads",
+  "email", "wa", "appnews", "appstories", "ytmain", "ytext", "igmain", "igext",
+  "not", "website", "pdf", "off"
+] as const;
+
 // Обновленная схема для телеграм-ссылок
 export const telegramLinkSchema = z.object({
   botType: z.enum(telegramBots),
@@ -84,9 +91,11 @@ export const telegramLinkSchema = z.object({
     z.enum(webinarBotScenarios),
     z.enum(partnerBotScenarios),
   ]).optional(),
+  source: z.enum(telegramSources).optional(),
   postfix: z
     .string()
-    .regex(/^[a-zA-Z0-9-]+$/, "Допускаются только буквы, цифры и дефис"),
+    .regex(/^[a-zA-Z0-9-]+$/, "Допускаются только буквы, цифры и дефис")
+    .optional(),
 });
 
 // Обновленная схема для вебинарных ссылок (оставляем для обратной совместимости)

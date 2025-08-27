@@ -27,7 +27,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
-import { BASE_URL_GROUPS } from "@/lib/constants";
+import { BASE_URL_GROUPS, TELEGRAM_SOURCE_GROUPS } from "@/lib/constants";
 import {
   AppLinkParams,
   WebinarLinkParams,
@@ -40,6 +40,7 @@ import {
   telegramBots,
   webinarBotScenarios,
   partnerBotScenarios,
+  telegramSources,
 } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -61,6 +62,7 @@ export default function Home() {
     defaultValues: {
       botType: "axevil_events_bot",
       scenario: "web_",
+      source: undefined,
       postfix: "",
     },
   });
@@ -75,6 +77,7 @@ export default function Home() {
 
   // Отслеживаем изменение типа бота для обновления доступных сценариев
   const selectedBotType = telegramForm.watch("botType");
+  const selectedScenario = telegramForm.watch("scenario");
   
   useEffect(() => {
     // Сбрасываем сценарий при смене бота
@@ -85,7 +88,16 @@ export default function Home() {
     } else if (selectedBotType === "the_axevil_bot") {
       telegramForm.setValue("scenario", undefined);
     }
+    // Сбрасываем source и postfix при смене бота или сценария
+    telegramForm.setValue("source", undefined);
+    telegramForm.setValue("postfix", "");
   }, [selectedBotType, telegramForm]);
+
+  useEffect(() => {
+    // Сбрасываем source и postfix при смене сценария
+    telegramForm.setValue("source", undefined);
+    telegramForm.setValue("postfix", "");
+  }, [selectedScenario, telegramForm]);
 
   const generateAppLink = (data: AppLinkParams) => {
     if (!data.campaign) return "";
@@ -102,13 +114,16 @@ export default function Home() {
   const generateTelegramLink = (data: TelegramLinkParams) => {
     const baseUrl = `https://t.me/${data.botType}`;
     
+    // Определяем postfix: либо из источника, либо из ручного ввода
+    const finalPostfix = data.source || data.postfix || "";
+    
     // Для бота Клаудия не используем сценарий
     if (data.botType === "the_axevil_bot") {
-      return `${baseUrl}?start=${data.postfix}`;
+      return finalPostfix ? `${baseUrl}?start=${finalPostfix}` : baseUrl;
     }
     
     // Для остальных ботов добавляем сценарий
-    return `${baseUrl}?start=${data.scenario}${data.postfix}`;
+    return finalPostfix ? `${baseUrl}?start=${data.scenario}${finalPostfix}` : baseUrl;
   };
 
   // Для обратной совместимости
@@ -430,19 +445,56 @@ export default function Home() {
                       />
                     )}
 
-                    <FormField
-                      control={telegramForm.control}
-                      name="postfix"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Тег источника (UTM-campaign)</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Например: tgmain" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {selectedBotType === "axevil_events_bot" && telegramForm.watch("scenario") === "web_" ? (
+                      <FormField
+                        control={telegramForm.control}
+                        name="source"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Источник</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Выберите источник" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {TELEGRAM_SOURCE_GROUPS.map((group) => (
+                                  <div key={group.label}>
+                                    <div className="flex items-center px-2 py-1.5 text-sm font-semibold text-muted-foreground">
+                                      <group.icon className="w-4 h-4 mr-2" />
+                                      {group.label}
+                                    </div>
+                                    {group.sources.map(({ value, label }) => (
+                                      <SelectItem key={value} value={value}>
+                                        {label}
+                                      </SelectItem>
+                                    ))}
+                                  </div>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                    ) : (
+                      <FormField
+                        control={telegramForm.control}
+                        name="postfix"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Тег источника (UTM-campaign)</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Например: tgmain" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </form>
                 </Form>
               </TabsContent>
