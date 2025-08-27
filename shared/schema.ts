@@ -81,7 +81,7 @@ export const partnerBotScenarios = [
 export const telegramSources = [
   "tgmain", "tgpartners", "tgclaudia", "tgbot", "tgpartnersbot", "tdext", "tdads",
   "email", "wa", "appnews", "appstories", "ytmain", "ytext", "igmain", "igext",
-  "not", "website", "pdf", "off"
+  "not", "website", "pdf", "off", "manual"
 ] as const;
 
 // Обновленная схема для телеграм-ссылок

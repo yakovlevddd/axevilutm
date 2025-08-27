@@ -105,7 +105,8 @@ export const TELEGRAM_SOURCE_GROUPS = [
       { value: "not", label: "Notion" },
       { value: "website", label: "Сайт Axevil" },
       { value: "pdf", label: "PDF-материалы" },
-      { value: "off", label: "Офлайн-мероприятия" }
+      { value: "off", label: "Офлайн-мероприятия" },
+      { value: "manual", label: "Ручная UTM-метка" }
     ]
   }
 ];

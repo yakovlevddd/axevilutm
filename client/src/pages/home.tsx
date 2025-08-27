@@ -78,6 +78,7 @@ export default function Home() {
   // Отслеживаем изменение типа бота для обновления доступных сценариев
   const selectedBotType = telegramForm.watch("botType");
   const selectedScenario = telegramForm.watch("scenario");
+  const selectedSource = telegramForm.watch("source");
   
   useEffect(() => {
     // Сбрасываем сценарий при смене бота
@@ -99,6 +100,13 @@ export default function Home() {
     telegramForm.setValue("postfix", "");
   }, [selectedScenario, telegramForm]);
 
+  useEffect(() => {
+    // При выборе источника (кроме "manual") очищаем postfix
+    if (selectedSource && selectedSource !== "manual") {
+      telegramForm.setValue("postfix", "");
+    }
+  }, [selectedSource, telegramForm]);
+
   const generateAppLink = (data: AppLinkParams) => {
     if (!data.campaign) return "";
     const params = [] as string[];
@@ -114,8 +122,15 @@ export default function Home() {
   const generateTelegramLink = (data: TelegramLinkParams) => {
     const baseUrl = `https://t.me/${data.botType}`;
     
-    // Определяем postfix: либо из источника, либо из ручного ввода
-    const finalPostfix = data.source || data.postfix || "";
+    // Определяем postfix: 
+    // - если выбран источник и это не "manual", используем его
+    // - если выбран "manual" или источник не выбран, используем ручной postfix
+    let finalPostfix = "";
+    if (data.source && data.source !== "manual") {
+      finalPostfix = data.source;
+    } else {
+      finalPostfix = data.postfix || "";
+    }
     
     // Для бота Клаудия не используем сценарий
     if (data.botType === "the_axevil_bot") {
@@ -445,41 +460,59 @@ export default function Home() {
                       />
                     )}
 
-                    {selectedBotType === "axevil_events_bot" && telegramForm.watch("scenario") === "web_" ? (
-                      <FormField
-                        control={telegramForm.control}
-                        name="source"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Источник</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Выберите источник" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {TELEGRAM_SOURCE_GROUPS.map((group) => (
-                                  <div key={group.label}>
-                                    <div className="flex items-center px-2 py-1.5 text-sm font-semibold text-muted-foreground">
-                                      <group.icon className="w-4 h-4 mr-2" />
-                                      {group.label}
+                    {selectedBotType === "axevil_events_bot" && selectedScenario === "web_" ? (
+                      <>
+                        <FormField
+                          control={telegramForm.control}
+                          name="source"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Источник</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Выберите источник" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="max-h-[250px]" side="bottom" align="start">
+                                  {TELEGRAM_SOURCE_GROUPS.map((group) => (
+                                    <div key={group.label}>
+                                      <div className="flex items-center px-2 py-1.5 text-sm font-semibold text-muted-foreground">
+                                        <group.icon className="w-4 h-4 mr-2" />
+                                        {group.label}
+                                      </div>
+                                      {group.sources.map(({ value, label }) => (
+                                        <SelectItem key={value} value={value}>
+                                          {label}
+                                        </SelectItem>
+                                      ))}
                                     </div>
-                                    {group.sources.map(({ value, label }) => (
-                                      <SelectItem key={value} value={value}>
-                                        {label}
-                                      </SelectItem>
-                                    ))}
-                                  </div>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        {selectedSource === "manual" && (
+                          <FormField
+                            control={telegramForm.control}
+                            name="postfix"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Ручная UTM-метка</FormLabel>
+                                <FormControl>
+                                  <Input {...field} placeholder="Введите метку, например: custom_tag" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
                         )}
-                      />
+                      </>
                     ) : (
                       <FormField
                         control={telegramForm.control}
