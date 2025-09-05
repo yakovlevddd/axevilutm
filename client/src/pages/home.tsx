@@ -160,7 +160,24 @@ export default function Home() {
       case 1:
         return formData.linkType !== null;
       case 2:
-        return formData.destination !== null;
+        if (!formData.destination) return false;
+        
+        // Проверяем обязательные поля для выбранного назначения
+        if (formData.linkType === "app") {
+          const selectedDestination = APP_DESTINATIONS.find(d => d.id === formData.destination);
+          if (selectedDestination?.needsId && !formData.destinationId?.trim()) {
+            return false;
+          }
+          if (selectedDestination?.needsIdeaName && !formData.ideaName?.trim()) {
+            return false;
+          }
+        } else if (formData.linkType === "partner_bot") {
+          const selectedDestination = PARTNER_BOT_DESTINATIONS.find(d => d.id === formData.destination);
+          if (selectedDestination?.needsIdeaName && !formData.ideaName?.trim()) {
+            return false;
+          }
+        }
+        return true;
       case 3:
         return formData.selectedSources.length > 0;
       case 4:
@@ -566,23 +583,26 @@ export default function Home() {
           <div className="space-y-3 mt-4 p-3 bg-accent/30 rounded-lg">
             {selectedDestination.needsId && (
               <div className="space-y-2">
-                <Label htmlFor="destinationId">
+                <Label htmlFor="destinationId" className="flex items-center gap-1">
                   ID {formData.destination?.includes("idea") ? "идеи" : 
                       formData.destination?.includes("news") ? "новости" : "инвестиции"}
+                  <span className="text-red-500">*</span>
                 </Label>
                             <Input
                   id="destinationId"
                   value={formData.destinationId || ""}
                   onChange={(e) => updateFormData({ destinationId: e.target.value })}
                   placeholder="Введите ID"
+                  className={!formData.destinationId?.trim() ? "border-red-300 focus:border-red-500" : ""}
                 />
               </div>
             )}
 
             {selectedDestination.needsIdeaName && (
               <div className="space-y-2">
-                <Label htmlFor="ideaName">
+                <Label htmlFor="ideaName" className="flex items-center gap-1">
                   Название идеи
+                  <span className="text-red-500">*</span>
                 </Label>
                             <Input
                   id="ideaName"
@@ -596,6 +616,7 @@ export default function Home() {
                     updateFormData({ ideaName: formatted });
                   }}
                   placeholder="Например: Scale-AI"
+                  className={!formData.ideaName?.trim() ? "border-red-300 focus:border-red-500" : ""}
                 />
                 <p className="text-sm text-muted-foreground">
                   Автоматически капитализируются первые буквы и пробелы заменяются на дефис
@@ -631,6 +652,7 @@ export default function Home() {
               }}
               className="w-full mt-3"
               size="sm"
+              disabled={!canProceedFromStep(2)}
             >
               Продолжить
             </Button>
