@@ -142,12 +142,12 @@ export const LINK_TYPES = [
 
 // Назначения для приложения
 export const APP_DESTINATIONS = [
-  { id: "home", label: "Главная страница" },
-  { id: "portfolio", label: "Портфель" },
-  { id: "idea_detail", label: "Детальная страница идеи", needsId: true },
-  { id: "investment_detail", label: "Детальная страница инвестиции", needsId: true, hasSubPages: true },
+  { id: "home", label: "Главная страница (список идей)" },
   { id: "news_list", label: "Список новостей" },
-  { id: "news_detail", label: "Детальная страница новости", needsId: true },
+  { id: "portfolio", label: "Портфель (список)" },
+  { id: "idea_detail", label: "Конкретная идея", needsId: true },
+  { id: "news_detail", label: "Конкретная новость", needsId: true },
+  { id: "investment_detail", label: "Конкретная инвестиция", needsId: true, hasSubPages: true },
   { id: "ai_chat", label: "Чат с ИИ Клаудией" },
   { id: "profile", label: "Профиль" },
   { id: "referral", label: "Реферальная программа" }
