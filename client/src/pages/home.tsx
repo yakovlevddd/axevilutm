@@ -340,13 +340,13 @@ export default function Home() {
         return `${baseUrl}?start=deals_${sourceParam}`;
       case "d":
         const ideaParam = formData.ideaName ? `_${formData.ideaName}` : "";
-        return `${baseUrl}?start=d_${sourceParam}${ideaParam}`;
+        return `${baseUrl}?start=d${ideaParam}_${sourceParam}`;
       case "dpres":
         const ideaParam2 = formData.ideaName ? `_${formData.ideaName}` : "";
-        return `${baseUrl}?start=dpres_${sourceParam}${ideaParam2}`;
+        return `${baseUrl}?start=dpres${ideaParam2}_${sourceParam}`;
       case "dcommit":
         const ideaParam3 = formData.ideaName ? `_${formData.ideaName}` : "";
-        return `${baseUrl}?start=dcommit_${sourceParam}${ideaParam3}`;
+        return `${baseUrl}?start=dcommit${ideaParam3}_${sourceParam}`;
       case "marketexplorer":
         return `${baseUrl}?start=marketexplorer_${sourceParam}`;
       case "knowledge":
