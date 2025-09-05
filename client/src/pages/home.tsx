@@ -23,7 +23,7 @@ import {
 } from "@/lib/constants";
 
 type LinkType = "app" | "webinar_bot" | "partner_bot";
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2 | 3 | 4 | 5;
 
 interface FormData {
   linkType: LinkType | null;
@@ -58,7 +58,7 @@ export default function Home() {
   };
 
   const goToNextStep = () => {
-    if (currentStep < 4) {
+    if (currentStep < 5) {
       setCurrentStep((prev) => (prev + 1) as Step);
     }
   };
@@ -87,8 +87,10 @@ export default function Home() {
       case 2:
         return formData.destination !== null;
       case 3:
-        return formData.utmCampaign.trim() !== "" && formData.selectedSources.length > 0;
+        return formData.selectedSources.length > 0;
       case 4:
+        return formData.utmCampaign.trim() !== "";
+      case 5:
         return true;
       default:
         return false;
@@ -130,7 +132,7 @@ export default function Home() {
     });
 
     setGeneratedLinks(links);
-    setTimeout(() => goToNextStep(), 300); // Переход к шагу 4 с результатами
+    setTimeout(() => goToNextStep(), 300); // Переход к шагу 5 с результатами
   };
 
   const generateAppLink = (source: string): string => {
@@ -276,12 +278,19 @@ export default function Home() {
   };
 
   const toggleSource = (sourceValue: string) => {
+    const newSelectedSources = formData.selectedSources.includes(sourceValue)
+      ? formData.selectedSources.filter(s => s !== sourceValue)
+      : [...formData.selectedSources, sourceValue];
+    
     setFormData(prev => ({
       ...prev,
-      selectedSources: prev.selectedSources.includes(sourceValue)
-        ? prev.selectedSources.filter(s => s !== sourceValue)
-        : [...prev.selectedSources, sourceValue]
+      selectedSources: newSelectedSources
     }));
+
+    // Если это первый выбранный источник, переходим к следующему шагу
+    if (newSelectedSources.length === 1 && !formData.selectedSources.includes(sourceValue)) {
+      setTimeout(() => goToNextStep(), 300);
+    }
   };
 
   const renderStep1 = () => (
@@ -376,11 +385,11 @@ export default function Home() {
                       {dest.needsId ? "Нужен ID" : dest.needsIdeaName ? "Нужно название" : "Есть подстраницы"}
                     </Badge>
                   )}
-                </div>
+                                  </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+                                  ))}
+                                </div>
 
         {selectedDestination && (
           <div className="space-y-3 mt-4 p-3 bg-accent/30 rounded-lg">
@@ -455,8 +464,57 @@ export default function Home() {
   const renderStep3 = () => (
     <div className="space-y-4">
       <div className="text-center space-y-1">
-        <h2 className="text-xl font-bold">Шаг 3: Для кого и чего ссылка?</h2>
-        <p className="text-sm text-muted-foreground">Укажите UTM метку и выберите источники</p>
+        <h2 className="text-xl font-bold">Шаг 3: Где планируется размещать / публиковать ссылку?</h2>
+        <p className="text-sm text-muted-foreground">Выберите источники (можно несколько)</p>
+      </div>
+
+      <div className="space-y-3">
+        {TELEGRAM_SOURCE_GROUPS.map((group) => (
+          <div key={group.label} className="space-y-1.5">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+              <group.icon className="w-3 h-3" />
+              {group.label}
+            </div>
+            <div className="grid gap-1.5 md:grid-cols-3 lg:grid-cols-4">
+              {group.sources.map((source) => (
+                <Card 
+                  key={source.value}
+                  className={`cursor-pointer transition-all hover:shadow-sm ${
+                    formData.selectedSources.includes(source.value)
+                      ? "ring-2 ring-primary bg-primary/5" 
+                      : "hover:bg-accent/30"
+                  }`}
+                  onClick={() => toggleSource(source.value)}
+                >
+                  <CardContent className="p-2">
+                    <div className="text-xs font-medium">{source.label}</div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {formData.selectedSources.length > 1 && (
+        <div className="text-center">
+          <Button 
+            onClick={goToNextStep}
+            className="mt-2"
+            size="sm"
+          >
+            Продолжить с выбранными источниками ({formData.selectedSources.length})
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderStep4 = () => (
+    <div className="space-y-4">
+      <div className="text-center space-y-1">
+        <h2 className="text-xl font-bold">Шаг 4: Укажите метку для отслеживания в аналитике</h2>
+        <p className="text-sm text-muted-foreground">Введите UTM метку для идентификации кампании</p>
       </div>
 
       <div className="space-y-3">
@@ -483,52 +541,25 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="space-y-3">
-          <Label className="text-sm">Выберите источники (можно несколько)</Label>
-          {TELEGRAM_SOURCE_GROUPS.map((group) => (
-            <div key={group.label} className="space-y-1.5">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                <group.icon className="w-3 h-3" />
-                {group.label}
-              </div>
-              <div className="grid gap-1.5 md:grid-cols-3 lg:grid-cols-4">
-                {group.sources.map((source) => (
-                  <Card 
-                    key={source.value}
-                    className={`cursor-pointer transition-all hover:shadow-sm ${
-                      formData.selectedSources.includes(source.value)
-                        ? "ring-2 ring-primary bg-primary/5" 
-                        : "hover:bg-accent/30"
-                    }`}
-                    onClick={() => toggleSource(source.value)}
-                  >
-                    <CardContent className="p-2">
-                      <div className="text-xs font-medium">{source.label}</div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-                                    </div>
-                                  ))}
-        </div>
-
-        {formData.selectedSources.length > 0 && !getValidationError() && (
-          <Button 
-            onClick={generateLinks}
-            className="w-full"
-            size="lg"
-          >
-            Сгенерировать ссылки ({formData.selectedSources.length})
-          </Button>
+        {!getValidationError() && formData.utmCampaign.trim() && (
+          <div className="text-center">
+            <Button 
+              onClick={generateLinks}
+              className="w-full"
+              size="sm"
+            >
+              Сгенерировать ссылки ({formData.selectedSources.length})
+            </Button>
+          </div>
         )}
       </div>
     </div>
   );
 
-  const renderStep4 = () => (
+  const renderStep5 = () => (
     <div className="space-y-4">
       <div className="text-center space-y-1">
-        <h2 className="text-xl font-bold">Шаг 4: Готовые ссылки</h2>
+        <h2 className="text-xl font-bold">Шаг 5: Готовые ссылки</h2>
         <p className="text-sm text-muted-foreground">Ваши ссылки готовы! Скопируйте нужные или все сразу</p>
       </div>
 
@@ -598,8 +629,8 @@ export default function Home() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Прогресс */}
-            <div className="flex items-center justify-center space-x-3">
-              {[1, 2, 3, 4].map((step) => (
+            <div className="flex items-center justify-center space-x-2">
+              {[1, 2, 3, 4, 5].map((step) => (
                 <div key={step} className="flex items-center">
                   <div
                     className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
@@ -610,9 +641,9 @@ export default function Home() {
                   >
                     {step}
                   </div>
-                  {step < 4 && (
+                  {step < 5 && (
                     <div
-                      className={`w-8 h-0.5 mx-1.5 ${
+                      className={`w-6 h-0.5 mx-1 ${
                         currentStep > step ? "bg-primary" : "bg-muted"
                       }`}
                     />
@@ -627,10 +658,11 @@ export default function Home() {
               {currentStep === 2 && renderStep2()}
               {currentStep === 3 && renderStep3()}
               {currentStep === 4 && renderStep4()}
+              {currentStep === 5 && renderStep5()}
             </div>
 
             {/* Навигация */}
-            {currentStep > 1 && currentStep < 4 && (
+            {currentStep > 1 && currentStep < 5 && (
               <div className="flex justify-start pt-4 border-t">
                 <Button
                   variant="outline"
