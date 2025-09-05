@@ -1,557 +1,583 @@
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Copy, Check, HelpCircle } from "lucide-react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue 
 } from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
-import { BASE_URL_GROUPS, TELEGRAM_SOURCE_GROUPS } from "@/lib/constants";
+import { Copy, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import {
-  AppLinkParams,
-  WebinarLinkParams,
-  TelegramLinkParams,
-  appLinkSchema,
-  webinarLinkSchema,
-  telegramLinkSchema,
-  pageTypes,
-  innerPageTypes,
-  telegramBots,
-  webinarBotScenarios,
-  partnerBotScenarios,
-  telegramSources,
-} from "@shared/schema";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  LINK_TYPES,
+  APP_DESTINATIONS,
+  INVESTMENT_SUB_PAGES,
+  WEBINAR_BOT_DESTINATIONS,
+  PARTNER_BOT_DESTINATIONS,
+  TELEGRAM_SOURCE_GROUPS
+} from "@/lib/constants";
+
+type LinkType = "app" | "webinar_bot" | "partner_bot";
+type Step = 1 | 2 | 3;
+
+interface FormData {
+  linkType: LinkType | null;
+  destination: string | null;
+  destinationId?: string;
+  subPage?: string;
+  ideaName?: string;
+  utmCampaign: string;
+  selectedSources: string[];
+}
+
+interface GeneratedLink {
+  source: string;
+  sourceLabel: string;
+  url: string;
+}
 
 export default function Home() {
-  const [copied, setCopied] = useState(false);
-  const [linkType, setLinkType] = useState<"app" | "telegram">("app");
+  const [currentStep, setCurrentStep] = useState<Step>(1);
+  const [formData, setFormData] = useState<FormData>({
+    linkType: null,
+    destination: null,
+    utmCampaign: "",
+    selectedSources: []
+  });
+  const [generatedLinks, setGeneratedLinks] = useState<GeneratedLink[]>([]);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const { toast } = useToast();
 
-  const appForm = useForm<AppLinkParams>({
-    resolver: zodResolver(appLinkSchema),
-    defaultValues: {
-      baseUrl: BASE_URL_GROUPS[0].urls[0].url,
-      campaign: "",
-    },
-  });
-
-  const telegramForm = useForm<TelegramLinkParams>({
-    resolver: zodResolver(telegramLinkSchema),
-    defaultValues: {
-      botType: "axevil_events_bot",
-      scenario: "web_",
-      source: undefined,
-      postfix: "",
-    },
-  });
-
-  // Для обратной совместимости
-  const webinarForm = useForm<WebinarLinkParams>({
-    resolver: zodResolver(webinarLinkSchema),
-    defaultValues: {
-      postfix: "",
-    },
-  });
-
-  // Отслеживаем изменение типа бота для обновления доступных сценариев
-  const selectedBotType = telegramForm.watch("botType");
-  const selectedScenario = telegramForm.watch("scenario");
-  const selectedSource = telegramForm.watch("source");
-  
-  useEffect(() => {
-    // Сбрасываем сценарий при смене бота
-    if (selectedBotType === "axevil_events_bot") {
-      telegramForm.setValue("scenario", webinarBotScenarios[0]);
-    } else if (selectedBotType === "axevil_partner_bot") {
-      telegramForm.setValue("scenario", partnerBotScenarios[0]);
-    } else if (selectedBotType === "the_axevil_bot") {
-      telegramForm.setValue("scenario", undefined);
-    }
-    // Сбрасываем source и postfix при смене бота или сценария
-    telegramForm.setValue("source", undefined);
-    telegramForm.setValue("postfix", "");
-  }, [selectedBotType, telegramForm]);
-
-  useEffect(() => {
-    // Сбрасываем source и postfix при смене сценария
-    telegramForm.setValue("source", undefined);
-    telegramForm.setValue("postfix", "");
-  }, [selectedScenario, telegramForm]);
-
-  useEffect(() => {
-    // При выборе источника (кроме "manual") очищаем postfix
-    if (selectedSource && selectedSource !== "manual") {
-      telegramForm.setValue("postfix", "");
-    }
-  }, [selectedSource, telegramForm]);
-
-  const generateAppLink = (data: AppLinkParams) => {
-    if (!data.campaign) return "";
-    const params = [] as string[];
-    params.push(`~campaign=${data.campaign}`);
-    if (data.feature) params.push(`~feature=${data.feature}`);
-    if (data.pageType) params.push(`page_type=${data.pageType}`);
-    if (data.pageId) params.push(`page_id=${data.pageId}`);
-    if (data.initialInnerPage)
-      params.push(`initial_inner_page=${data.initialInnerPage}`);
-    return `${data.baseUrl}?${params.join("&")}`;
+  const updateFormData = (updates: Partial<FormData>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
   };
 
-  const generateTelegramLink = (data: TelegramLinkParams) => {
-    const baseUrl = `https://t.me/${data.botType}`;
-    
-    // Определяем postfix: 
-    // - если выбран источник и это не "manual", используем его
-    // - если выбран "manual" или источник не выбран, используем ручной postfix
-    let finalPostfix = "";
-    if (data.source && data.source !== "manual") {
-      finalPostfix = data.source;
-    } else {
-      finalPostfix = data.postfix || "";
+  const goToNextStep = () => {
+    if (currentStep < 3) {
+      setCurrentStep((prev) => (prev + 1) as Step);
     }
-    
-    // Для бота Клаудия не используем сценарий
-    if (data.botType === "the_axevil_bot") {
-      return finalPostfix ? `${baseUrl}?start=${finalPostfix}` : baseUrl;
-    }
-    
-    // Для остальных ботов добавляем сценарий
-    return finalPostfix ? `${baseUrl}?start=${data.scenario}${finalPostfix}` : baseUrl;
   };
 
-  // Для обратной совместимости
-  const generateWebinarLink = (data: WebinarLinkParams) => {
-    return `https://t.me/axevil_events_bot?start=web_${data.postfix}`;
+  const goToPrevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep((prev) => (prev - 1) as Step);
+    }
   };
 
-  const copyToClipboard = async (text: string) => {
+  const canProceedFromStep = (step: Step): boolean => {
+    switch (step) {
+      case 1:
+        return formData.linkType !== null;
+      case 2:
+        return formData.destination !== null;
+      case 3:
+        return formData.utmCampaign.trim() !== "";
+      default:
+        return false;
+    }
+  };
+
+  const generateLinks = () => {
+    if (!formData.linkType || !formData.destination || !formData.utmCampaign) return;
+
+    const links: GeneratedLink[] = [];
+
+    formData.selectedSources.forEach(sourceValue => {
+      const sourceGroup = TELEGRAM_SOURCE_GROUPS.find(group => 
+        group.sources.some(s => s.value === sourceValue)
+      );
+      const source = sourceGroup?.sources.find(s => s.value === sourceValue);
+      
+      if (source) {
+        let url = "";
+        
+        switch (formData.linkType) {
+          case "app":
+            url = generateAppLink(sourceValue);
+            break;
+          case "webinar_bot":
+            url = generateWebinarBotLink(sourceValue);
+            break;
+          case "partner_bot":
+            url = generatePartnerBotLink(sourceValue);
+            break;
+        }
+
+        links.push({
+          source: sourceValue,
+          sourceLabel: source.label,
+          url
+        });
+      }
+    });
+
+    setGeneratedLinks(links);
+  };
+
+  const generateAppLink = (source: string): string => {
+    const baseUrl = "https://axevil.app.link/web"; // Базовая ссылка для приложения
+    const params = [`~campaign=${formData.utmCampaign}`];
+    
+    // Добавляем источник как feature
+    params.push(`~feature=${source}`);
+
+    // Добавляем параметры в зависимости от типа назначения
+    switch (formData.destination) {
+      case "home":
+        // Без дополнительных параметров
+        break;
+      case "portfolio":
+        params.push("page_type=portfolio");
+        if (formData.subPage) {
+          params.push(`initial_inner_page=${formData.subPage}`);
+        }
+        break;
+      case "idea_detail":
+        params.push("page_type=idea");
+        if (formData.destinationId) {
+          params.push(`page_id=${formData.destinationId}`);
+        }
+        break;
+      case "investment_detail":
+        params.push("page_type=order");
+        if (formData.destinationId) {
+          params.push(`page_id=${formData.destinationId}`);
+        }
+        if (formData.subPage) {
+          params.push(`initial_inner_page=${formData.subPage}`);
+        }
+        break;
+      case "news_list":
+        params.push("page_type=news");
+        break;
+      case "news_detail":
+        params.push("page_type=news");
+        if (formData.destinationId) {
+          params.push(`page_id=${formData.destinationId}`);
+        }
+        break;
+      case "ai_chat":
+        params.push("page_type=assistant");
+        break;
+      case "profile":
+        params.push("page_type=profile");
+        break;
+      case "referral":
+        params.push("page_type=referral");
+        break;
+    }
+
+    return `${baseUrl}?${params.join("&")}`;
+  };
+
+  const generateWebinarBotLink = (source: string): string => {
+    const baseUrl = "https://t.me/axevil_events_bot";
+    
+    switch (formData.destination) {
+      case "invite":
+        return `${baseUrl}?start=web_${source}_${formData.utmCampaign}`;
+      case "application":
+        return `${baseUrl}?start=commit_${source}_${formData.utmCampaign}`;
+      default:
+        return baseUrl;
+    }
+  };
+
+  const generatePartnerBotLink = (source: string): string => {
+    const baseUrl = "https://t.me/axevil_partner_bot";
+    
+    switch (formData.destination) {
+      case "home":
+        return `${baseUrl}?start=partnerinfo_${source}_${formData.utmCampaign}`;
+      case "webinars":
+        return `${baseUrl}?start=getinvite_${source}_${formData.utmCampaign}`;
+      case "report":
+        return `${baseUrl}?start=partnerinfo_${source}_${formData.utmCampaign}`;
+      case "ideas_list":
+        return `${baseUrl}?start=getpitch_${source}_${formData.utmCampaign}`;
+      case "idea_pitch":
+      case "idea_materials":
+      case "idea_booking":
+        const ideaParam = formData.ideaName ? `_${formData.ideaName}` : "";
+        return `${baseUrl}?start=getpitch_${source}_${formData.utmCampaign}${ideaParam}`;
+      case "knowledge":
+        return `${baseUrl}?start=partnerinfo_${source}_${formData.utmCampaign}`;
+      case "registration":
+        return `${baseUrl}?start=newpartner_${source}_${formData.utmCampaign}`;
+      case "application":
+        return `${baseUrl}?start=commit_${source}_${formData.utmCampaign}`;
+      default:
+        return baseUrl;
+    }
+  };
+
+  const copyToClipboard = async (text: string, index: number) => {
     await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 2000);
     toast({
       title: "Ссылка скопирована!",
       description: "Сгенерированная ссылка скопирована в буфер обмена.",
     });
   };
 
-  const generatedLink =
-    linkType === "app"
-      ? generateAppLink(appForm.watch())
-      : generateTelegramLink(telegramForm.watch());
+  const validateUtmCampaign = (value: string): boolean => {
+    if (formData.linkType === "webinar_bot") {
+      // Для бота вебинаров фиксированный список
+      const webinarTags = ["tgmain", "tgpartners", "email", "wa", "ytmain", "igmain", "website"];
+      return webinarTags.includes(value);
+    }
+    // Для остальных случаев любой валидный UTM
+    return /^[a-zA-Z0-9_-]+$/.test(value);
+  };
+
+  const getValidationError = (): string | null => {
+    if (!formData.utmCampaign.trim()) {
+      return "UTM метка обязательна";
+    }
+    if (!validateUtmCampaign(formData.utmCampaign)) {
+      if (formData.linkType === "webinar_bot") {
+        return "Для бота вебинаров используйте одну из меток: tgmain, tgpartners, email, wa, ytmain, igmain, website";
+      }
+      return "UTM метка может содержать только латинские буквы, цифры, дефис и подчёркивание";
+    }
+    return null;
+  };
+
+  const toggleSource = (sourceValue: string) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedSources: prev.selectedSources.includes(sourceValue)
+        ? prev.selectedSources.filter(s => s !== sourceValue)
+        : [...prev.selectedSources, sourceValue]
+    }));
+  };
+
+  const renderStep1 = () => (
+    <div className="space-y-6">
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold">Шаг 1: Какую ссылку нужно создать?</h2>
+        <p className="text-muted-foreground">Выберите тип ссылки, которую хотите сгенерировать</p>
+      </div>
+      
+      <div className="grid gap-4 md:grid-cols-3">
+        {LINK_TYPES.map((type) => (
+          <Card 
+            key={type.id}
+            className={`cursor-pointer transition-all hover:shadow-md ${
+              formData.linkType === type.id 
+                ? "ring-2 ring-primary bg-primary/5" 
+                : "hover:bg-accent/50"
+            }`}
+            onClick={() => updateFormData({ linkType: type.id as LinkType })}
+          >
+            <CardContent className="p-6 text-center space-y-4">
+              <type.icon className="w-12 h-12 mx-auto text-primary" />
+              <div>
+                <h3 className="font-semibold text-lg">{type.label}</h3>
+                <p className="text-sm text-muted-foreground">{type.description}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderStep2 = () => {
+    if (!formData.linkType) return null;
+
+    let destinations: any[] = [];
+    let title = "";
+
+    switch (formData.linkType) {
+      case "app":
+        destinations = APP_DESTINATIONS;
+        title = "Куда ведёт ссылка в приложении?";
+        break;
+      case "webinar_bot":
+        destinations = WEBINAR_BOT_DESTINATIONS;
+        title = "Что должно произойти в боте вебинаров?";
+        break;
+      case "partner_bot":
+        destinations = PARTNER_BOT_DESTINATIONS;
+        title = "Какая страница откроется в ЛК партнёра?";
+        break;
+    }
+
+    const selectedDestination = destinations.find(d => d.id === formData.destination);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted p-6">
-      <div className="max-w-3xl mx-auto space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              Генератор ссылок с UTM метками
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs
-              value={linkType}
-              onValueChange={(v) => setLinkType(v as "app" | "telegram")}
-            >
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="app">Ссылка на приложение</TabsTrigger>
-                <TabsTrigger value="telegram">Ссылка на Telegram-бот</TabsTrigger>
-              </TabsList>
+      <div className="space-y-6">
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-bold">Шаг 2: {title}</h2>
+          <p className="text-muted-foreground">Выберите куда должна вести ваша ссылка</p>
+        </div>
 
-              <TabsContent value="app">
-                <Form {...appForm}>
-                  <form className="space-y-4">
-                    <FormField
-                      control={appForm.control}
-                      name="baseUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Где публикуем ссылку</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Выберите площадку" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {BASE_URL_GROUPS.map((group) => (
-                                <div key={group.label}>
-                                  <div className="flex items-center px-2 py-1.5 text-sm font-semibold text-muted-foreground">
-                                    <group.icon className="w-4 h-4 mr-2" />
-                                    {group.label}
+        <div className="grid gap-3">
+          {destinations.map((dest) => (
+            <Card 
+              key={dest.id}
+              className={`cursor-pointer transition-all hover:shadow-sm ${
+                formData.destination === dest.id 
+                  ? "ring-2 ring-primary bg-primary/5" 
+                  : "hover:bg-accent/30"
+              }`}
+              onClick={() => updateFormData({ 
+                destination: dest.id,
+                destinationId: "",
+                subPage: "",
+                ideaName: ""
+              })}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{dest.label}</span>
+                  {(dest.needsId || dest.needsIdeaName || dest.hasSubPages) && (
+                    <Badge variant="outline" className="text-xs">
+                      {dest.needsId ? "Нужен ID" : dest.needsIdeaName ? "Нужно название" : "Есть подстраницы"}
+                    </Badge>
+                  )}
                                   </div>
-                                  {group.urls.map(({ url, label }) => (
-                                    <SelectItem key={url} value={url}>
-                                      {label}
-                                    </SelectItem>
+              </CardContent>
+            </Card>
                                   ))}
                                 </div>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
 
-                    <FormField
-                      control={appForm.control}
-                      name="campaign"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            Тег источника (UTM-campaign)
-                            <TooltipProvider>
-                              <Tooltip delayDuration={0}>
-                                <TooltipTrigger asChild>
-                                  <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>
-                                    Помогает определить, в какой именно единице
-                                    контента размещена ссылка. Например, для
-                                    Telegram это может быть дата или название
-                                    поста (aichampions100825)
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </FormLabel>
-                          <FormControl>
+        {selectedDestination && (
+          <div className="space-y-4 mt-6 p-4 bg-accent/30 rounded-lg">
+            {selectedDestination.needsId && (
+              <div className="space-y-2">
+                <Label htmlFor="destinationId">
+                  ID {formData.destination?.includes("idea") ? "идеи" : 
+                      formData.destination?.includes("news") ? "новости" : "инвестиции"}
+                </Label>
                             <Input
-                              {...field}
-                              placeholder="Например: post_100823"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  id="destinationId"
+                  value={formData.destinationId || ""}
+                  onChange={(e) => updateFormData({ destinationId: e.target.value })}
+                  placeholder="Введите ID"
+                />
+              </div>
+            )}
 
-                    <FormField
-                      control={appForm.control}
-                      name="feature"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            Дополнительный параметр отслеживания (необязательно)
-                            <TooltipProvider>
-                              <Tooltip delayDuration={0}>
-                                <TooltipTrigger asChild>
-                                  <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>
-                                    Позволяет более точно определить место
-                                    размещения ссылки. Например, если в одной
-                                    PDF презентации есть две кнопки, то можно
-                                    использовать разные ссылки для разных
-                                    кнопок, отличающиеся дополнительным
-                                    парамтером (например page1 или last_page)
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </FormLabel>
-                          <FormControl>
+            {selectedDestination.needsIdeaName && (
+              <div className="space-y-2">
+                <Label htmlFor="ideaName">
+                  Название идеи
+                </Label>
                             <Input
-                              {...field}
-                              placeholder="Например: button_top"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  id="ideaName"
+                  value={formData.ideaName || ""}
+                  onChange={(e) => updateFormData({ 
+                    ideaName: e.target.value.replace(/\s+/g, "-") 
+                  })}
+                  placeholder="Например: Scale-AI"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Пробелы автоматически заменяются на дефис
+                </p>
+              </div>
+            )}
 
-                    <FormField
-                      control={appForm.control}
-                      name="pageType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Какая страница открывается по ссылке (необязательно)
-                          </FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            value={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Выберите тип страницы" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {pageTypes.map((type) => (
-                                <SelectItem key={type} value={type}>
-                                  {type}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-
-                    {appForm.watch("pageType") &&
-                      ["idea", "news", "order"].includes(
-                        appForm.watch("pageType"),
-                      ) && (
-                        <FormField
-                          control={appForm.control}
-                          name="pageId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>ID идеи / новости / ордера</FormLabel>
-                              <FormControl>
-                                <Input
-                                  {...field}
-                                  placeholder="Введите ID страницы"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
-
-                    {appForm.watch("pageType") === "portfolio" && (
-                      <FormField
-                        control={appForm.control}
-                        name="initialInnerPage"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Вкладка портфеля</FormLabel>
+            {selectedDestination.hasSubPages && (
+              <div className="space-y-2">
+                <Label>Выберите вкладку</Label>
                             <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
+                  value={formData.subPage || ""} 
+                  onValueChange={(value) => updateFormData({ subPage: value })}
                             >
-                              <FormControl>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Выберите вкладку" />
+                    <SelectValue placeholder="Выберите вкладку портфеля" />
                                 </SelectTrigger>
-                              </FormControl>
                               <SelectContent>
-                                {innerPageTypes.map((type) => (
-                                  <SelectItem key={type} value={type}>
-                                    {type}
+                    {INVESTMENT_SUB_PAGES.map((page) => (
+                      <SelectItem key={page.id} value={page.id}>
+                        {page.label}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                  </form>
-                </Form>
-              </TabsContent>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
-              <TabsContent value="telegram">
-                <Form {...telegramForm}>
-                  <form className="space-y-4">
-                    <FormField
-                      control={telegramForm.control}
-                      name="botType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Бот</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Выберите бота" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="axevil_events_bot">
-                                Бот для вебинаров (@axevil_events_bot)
-                              </SelectItem>
-                              <SelectItem value="axevil_partner_bot">
-                                ЛК для партнёров (@axevil_partner_bot)
-                              </SelectItem>
-                              <SelectItem value="the_axevil_bot">
-                                Клаудия (@the_axevil_bot)
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
+  const renderStep3 = () => (
+    <div className="space-y-6">
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold">Шаг 3: Для кого и чего ссылка?</h2>
+        <p className="text-muted-foreground">Укажите UTM метку и выберите источники</p>
+      </div>
 
-                    {selectedBotType !== "the_axevil_bot" && (
-                      <FormField
-                        control={telegramForm.control}
-                        name="scenario"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Что происходит при переходе по ссылке</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Выберите сценарий" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {selectedBotType === "axevil_events_bot" ? (
-                                  <>
-                                    <SelectItem value="web_">
-                                      Регистрация на вебинар
-                                    </SelectItem>
-                                    <SelectItem value="webrec_">
-                                      Получить запись вебинара
-                                    </SelectItem>
-                                    <SelectItem value="commit_">
-                                      Оставить заявку на консультацию
-                                    </SelectItem>
-                                  </>
-                                ) : (
-                                  <>
-                                    <SelectItem value="partnerinfo_">
-                                      Получить партнёрский отчёт
-                                    </SelectItem>
-                                    <SelectItem value="getinvite_">
-                                      Сгенерировать приглашение на вебинар
-                                    </SelectItem>
-                                    <SelectItem value="getpitch_">
-                                      Получить сообщение-питч
-                                    </SelectItem>
-                                    <SelectItem value="commit_">
-                                      Оставить заявку на консультацию
-                                    </SelectItem>
-                                    <SelectItem value="newpartner_">
-                                      Стать партнёром
-                                    </SelectItem>
-                                  </>
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </FormItem>
-                        )}
-                      />
-                    )}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="utm">UTM метка</Label>
+          <Input
+            id="utm"
+            value={formData.utmCampaign}
+            onChange={(e) => updateFormData({ utmCampaign: e.target.value })}
+            placeholder={
+              formData.linkType === "webinar_bot" 
+                ? "Используйте: tgmain, tgpartners, email, wa, ytmain, igmain, website"
+                : "Например: post_100823"
+            }
+          />
+          {getValidationError() && (
+            <p className="text-sm text-destructive">{getValidationError()}</p>
+          )}
+          <p className="text-sm text-muted-foreground">
+            {formData.linkType === "webinar_bot" 
+              ? "Для бота вебинаров доступны только фиксированные метки"
+              : "Метка поможет определить конкретный пост или материал, где размещена ссылка"
+            }
+          </p>
+        </div>
 
-                    {selectedBotType === "axevil_events_bot" && selectedScenario === "web_" ? (
-                      <>
-                        <FormField
-                          control={telegramForm.control}
-                          name="source"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Источник</FormLabel>
-                              <Select
-                                onValueChange={field.onChange}
-                                value={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Выберите источник" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent className="max-h-[250px]" side="bottom" align="start">
+        <div className="space-y-4">
+          <Label>Выберите источники (можно несколько)</Label>
                                   {TELEGRAM_SOURCE_GROUPS.map((group) => (
-                                    <div key={group.label}>
-                                      <div className="flex items-center px-2 py-1.5 text-sm font-semibold text-muted-foreground">
-                                        <group.icon className="w-4 h-4 mr-2" />
+            <div key={group.label} className="space-y-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                <group.icon className="w-4 h-4" />
                                         {group.label}
                                       </div>
-                                      {group.sources.map(({ value, label }) => (
-                                        <SelectItem key={value} value={value}>
-                                          {label}
-                                        </SelectItem>
-                                      ))}
+              <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                {group.sources.map((source) => (
+                  <Card 
+                    key={source.value}
+                    className={`cursor-pointer transition-all hover:shadow-sm ${
+                      formData.selectedSources.includes(source.value)
+                        ? "ring-2 ring-primary bg-primary/5" 
+                        : "hover:bg-accent/30"
+                    }`}
+                    onClick={() => toggleSource(source.value)}
+                  >
+                    <CardContent className="p-3">
+                      <div className="text-sm font-medium">{source.label}</div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
                                     </div>
                                   ))}
-                                </SelectContent>
-                              </Select>
-                            </FormItem>
-                          )}
-                        />
-                        
-                        {selectedSource === "manual" && (
-                          <FormField
-                            control={telegramForm.control}
-                            name="postfix"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Ручная UTM-метка</FormLabel>
-                                <FormControl>
-                                  <Input {...field} placeholder="Введите метку, например: custom_tag" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        )}
-                      </>
-                    ) : (
-                      <FormField
-                        control={telegramForm.control}
-                        name="postfix"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Тег источника (UTM-campaign)</FormLabel>
-                            <FormControl>
-                              <Input {...field} placeholder="Например: tgmain" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                  </form>
-                </Form>
-              </TabsContent>
-            </Tabs>
+        </div>
 
-            <div className="mt-6 space-y-2">
-              <div className="font-medium">Итоговая ссылка:</div>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 p-2 bg-muted rounded-md break-all">
-                  {generatedLink ||
-                    "Заполните необходимые поля для создания ссылки"}
-                </code>
+        {formData.selectedSources.length > 0 && !getValidationError() && (
+          <Button 
+            onClick={generateLinks}
+            className="w-full"
+            size="lg"
+          >
+            Сгенерировать ссылки ({formData.selectedSources.length})
+          </Button>
+        )}
+
+        {generatedLinks.length > 0 && (
+          <div className="space-y-4 mt-6">
+            <h3 className="text-lg font-semibold">Сгенерированные ссылки:</h3>
+            {generatedLinks.map((link, index) => (
+              <Card key={index}>
+                <CardContent className="p-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{link.sourceLabel}</span>
                 <Button
                   variant="outline"
-                  size="icon"
-                  onClick={() => copyToClipboard(generatedLink)}
+                        size="sm"
+                        onClick={() => copyToClipboard(link.url, index)}
                 >
-                  {copied ? (
+                        {copiedIndex === index ? (
                     <Check className="h-4 w-4" />
                   ) : (
                     <Copy className="h-4 w-4" />
                   )}
                 </Button>
               </div>
+                    <code className="block p-2 bg-muted rounded text-sm break-all">
+                      {link.url}
+                    </code>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent text-center">
+              Генератор ссылок с UTM метками
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Прогресс */}
+            <div className="flex items-center justify-center space-x-4">
+              {[1, 2, 3].map((step) => (
+                <div key={step} className="flex items-center">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      currentStep >= step
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {step}
+                  </div>
+                  {step < 3 && (
+                    <div
+                      className={`w-16 h-1 mx-2 ${
+                        currentStep > step ? "bg-primary" : "bg-muted"
+                      }`}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Контент шага */}
+            <div className="min-h-[400px]">
+              {currentStep === 1 && renderStep1()}
+              {currentStep === 2 && renderStep2()}
+              {currentStep === 3 && renderStep3()}
+            </div>
+
+            {/* Навигация */}
+            <div className="flex justify-between pt-6 border-t">
+              <Button
+                variant="outline"
+                onClick={goToPrevStep}
+                disabled={currentStep === 1}
+              >
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Назад
+              </Button>
+              
+              {currentStep < 3 ? (
+                <Button
+                  onClick={goToNextStep}
+                  disabled={!canProceedFromStep(currentStep)}
+                >
+                  Далее
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              ) : (
+                <div /> // Пустой div для выравнивания
+              )}
             </div>
           </CardContent>
         </Card>
