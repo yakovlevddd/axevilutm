@@ -652,10 +652,26 @@ export default function Home() {
         <p className="text-sm text-muted-foreground">Ваши ссылки готовы! Скопируйте нужные или все сразу</p>
       </div>
 
-      <div className="flex justify-center">
-        <Button onClick={copyAllLinks} size="sm" className="mb-3">
+      <div className="flex justify-center gap-3 mb-3">
+        <Button onClick={copyAllLinks} size="sm">
           <Copy className="w-3 h-3 mr-2" />
           Скопировать все ссылки
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => {
+            setCurrentStep(1);
+            setFormData({
+              linkType: null,
+              destination: null,
+              utmCampaign: "",
+              selectedSources: []
+            });
+            setGeneratedLinks([]);
+          }}
+        >
+          Начать заново
         </Button>
       </div>
 
@@ -685,24 +701,6 @@ export default function Home() {
             </CardContent>
           </Card>
         ))}
-      </div>
-
-      <div className="text-center pt-4">
-        <Button 
-          variant="outline" 
-          onClick={() => {
-            setCurrentStep(1);
-            setFormData({
-              linkType: null,
-              destination: null,
-              utmCampaign: "",
-              selectedSources: []
-            });
-            setGeneratedLinks([]);
-          }}
-        >
-          Создать новые ссылки
-        </Button>
       </div>
     </div>
   );
