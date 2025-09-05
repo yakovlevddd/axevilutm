@@ -136,13 +136,40 @@ export default function Home() {
   };
 
   const generateAppLink = (source: string): string => {
-    const baseUrl = "https://axevil.app.link/web"; // Базовая ссылка для приложения
-    const params = [`~campaign=${formData.utmCampaign}`];
+    // Определяем базовый URL на основе выбранного источника
+    const sourceGroup = TELEGRAM_SOURCE_GROUPS.find(group => 
+      group.sources.some(s => s.value === source)
+    );
+    const sourceConfig = sourceGroup?.sources.find(s => s.value === source);
     
-    // Добавляем источник как feature
-    params.push(`~feature=${source}`);
+    // Карта источников к URL
+    const sourceUrlMap: { [key: string]: string } = {
+      "tgmain": "https://axevil.app.link/tgac",
+      "tgpartners": "https://axevil.app.link/tgp",
+      "tgclaudia": "https://axevil.app.link/tgmb",
+      "tgbot": "https://axevil.app.link/tgwb",
+      "tgpartnersbot": "https://axevil.app.link/tgpb",
+      "tdext": "https://axevil.app.link/tgx",
+      "tdads": "https://axevil.app.link/tgads",
+      "email": "https://axevil.app.link/eml",
+      "wa": "https://axevil.app.link/wa",
+      "appnews": "https://axevil.app.link/appnews",
+      "appstories": "https://axevil.app.link/appstories",
+      "ytmain": "https://axevil.app.link/yt",
+      "ytext": "https://axevil.app.link/ytx",
+      "igmain": "https://axevil.app.link/igac",
+      "igext": "https://axevil.app.link/igex",
+      "not": "https://axevil.app.link/ntn",
+      "website": "https://axevil.app.link/web",
+      "pdf": "https://axevil.app.link/pres",
+      "off": "https://axevil.app.link/event",
+      "manual": "https://axevil.app.link/web"
+    };
+    
+    const baseUrl = sourceUrlMap[source] || "https://axevil.app.link/web";
+    const params = [`~campaign=${formData.utmCampaign}`];
 
-    // Добавляем параметры в зависимости от типа назначения
+    // Добавляем параметры в зависимости от типа назначения (page_type)
     switch (formData.destination) {
       case "home":
         // Без дополнительных параметров
@@ -196,9 +223,9 @@ export default function Home() {
     
     switch (formData.destination) {
       case "invite":
-        return `${baseUrl}?start=web_${source}_${formData.utmCampaign}`;
+        return `${baseUrl}?start=web_${formData.utmCampaign}_${source}`;
       case "application":
-        return `${baseUrl}?start=commit_${source}_${formData.utmCampaign}`;
+        return `${baseUrl}?start=commit_${formData.utmCampaign}_${source}`;
       default:
         return baseUrl;
     }
@@ -209,24 +236,24 @@ export default function Home() {
     
     switch (formData.destination) {
       case "home":
-        return `${baseUrl}?start=partnerinfo_${source}_${formData.utmCampaign}`;
+        return `${baseUrl}?start=partnerinfo_${formData.utmCampaign}_${source}`;
       case "webinars":
-        return `${baseUrl}?start=getinvite_${source}_${formData.utmCampaign}`;
+        return `${baseUrl}?start=getinvite_${formData.utmCampaign}_${source}`;
       case "report":
-        return `${baseUrl}?start=partnerinfo_${source}_${formData.utmCampaign}`;
+        return `${baseUrl}?start=partnerinfo_${formData.utmCampaign}_${source}`;
       case "ideas_list":
-        return `${baseUrl}?start=getpitch_${source}_${formData.utmCampaign}`;
+        return `${baseUrl}?start=getpitch_${formData.utmCampaign}_${source}`;
       case "idea_pitch":
       case "idea_materials":
       case "idea_booking":
         const ideaParam = formData.ideaName ? `_${formData.ideaName}` : "";
-        return `${baseUrl}?start=getpitch_${source}_${formData.utmCampaign}${ideaParam}`;
+        return `${baseUrl}?start=getpitch_${formData.utmCampaign}_${source}${ideaParam}`;
       case "knowledge":
-        return `${baseUrl}?start=partnerinfo_${source}_${formData.utmCampaign}`;
+        return `${baseUrl}?start=partnerinfo_${formData.utmCampaign}_${source}`;
       case "registration":
-        return `${baseUrl}?start=newpartner_${source}_${formData.utmCampaign}`;
+        return `${baseUrl}?start=newpartner_${formData.utmCampaign}_${source}`;
       case "application":
-        return `${baseUrl}?start=commit_${source}_${formData.utmCampaign}`;
+        return `${baseUrl}?start=commit_${formData.utmCampaign}_${source}`;
       default:
         return baseUrl;
     }
