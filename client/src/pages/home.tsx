@@ -89,8 +89,8 @@ export default function Home() {
       case 3:
         return formData.selectedSources.length > 0;
       case 4:
-        // Для бота вебинаров UTM не нужен
-        if (formData.linkType === "webinar_bot") return true;
+        // Для ботов вебинаров и ЛК партнёра UTM не нужен
+        if (formData.linkType === "webinar_bot" || formData.linkType === "partner_bot") return true;
         return formData.utmCampaign.trim() !== "";
       case 5:
         return true;
@@ -101,8 +101,8 @@ export default function Home() {
 
   const generateLinks = () => {
     if (!formData.linkType || !formData.destination) return;
-    // Для ботов вебинаров UTM не нужен
-    if (formData.linkType !== "webinar_bot" && !formData.utmCampaign) return;
+    // Для ботов вебинаров и ЛК партнёра UTM не нужен
+    if (formData.linkType !== "webinar_bot" && formData.linkType !== "partner_bot" && !formData.utmCampaign) return;
 
     const links: GeneratedLink[] = [];
 
@@ -136,8 +136,8 @@ export default function Home() {
     });
 
     setGeneratedLinks(links);
-    // Для ботов вебинаров переходим сразу на шаг 5, для остальных - на следующий шаг
-    if (formData.linkType === "webinar_bot") {
+    // Для ботов вебинаров и ЛК партнёра переходим сразу на шаг 5, для остальных - на следующий шаг
+    if (formData.linkType === "webinar_bot" || formData.linkType === "partner_bot") {
       setTimeout(() => setCurrentStep(5), 300);
     } else {
       setTimeout(() => goToNextStep(), 300);
@@ -269,26 +269,52 @@ export default function Home() {
   const generatePartnerBotLink = (source: string): string => {
     const baseUrl = "https://t.me/axevil_partner_bot";
     
+    // Карта источников к сокращениям для ботов (та же что и для вебинаров)
+    const sourceBotMap: { [key: string]: string } = {
+      "tgmain": "tgac",
+      "tgpartners": "tgp", 
+      "tgclaudia": "tgmb",
+      "tgbot": "tgwb",
+      "tgpartnersbot": "tgpb",
+      "tdext": "tgx",
+      "tdads": "tgads",
+      "email": "eml",
+      "wa": "wa",
+      "appnews": "appnews",
+      "appstories": "appstories",
+      "ytmain": "yt",
+      "ytext": "ytx", 
+      "igmain": "igac",
+      "igext": "igex",
+      "not": "ntn",
+      "website": "web",
+      "pdf": "pres",
+      "off": "event",
+      "manual": "web"
+    };
+    
+    const sourceParam = sourceBotMap[source] || source;
+    
     switch (formData.destination) {
       case "home":
-        return `${baseUrl}?start=partnerinfo_${formData.utmCampaign}_${source}`;
+        return `${baseUrl}?start=menu_${sourceParam}`;
       case "webinars":
-        return `${baseUrl}?start=getinvite_${formData.utmCampaign}_${source}`;
+        return `${baseUrl}?start=getinvite_${sourceParam}`;
       case "report":
-        return `${baseUrl}?start=partnerinfo_${formData.utmCampaign}_${source}`;
+        return `${baseUrl}?start=deals_${sourceParam}`;
       case "ideas_list":
-        return `${baseUrl}?start=getpitch_${formData.utmCampaign}_${source}`;
+        return `${baseUrl}?start=getpitch_${sourceParam}`;
       case "idea_pitch":
       case "idea_materials":
       case "idea_booking":
         const ideaParam = formData.ideaName ? `_${formData.ideaName}` : "";
-        return `${baseUrl}?start=getpitch_${formData.utmCampaign}_${source}${ideaParam}`;
+        return `${baseUrl}?start=getpitch_${sourceParam}${ideaParam}`;
       case "knowledge":
-        return `${baseUrl}?start=partnerinfo_${formData.utmCampaign}_${source}`;
+        return `${baseUrl}?start=menu_${sourceParam}`;
       case "registration":
-        return `${baseUrl}?start=newpartner_${formData.utmCampaign}_${source}`;
+        return `${baseUrl}?start=register_${sourceParam}`;
       case "application":
-        return `${baseUrl}?start=commit_${formData.utmCampaign}_${source}`;
+        return `${baseUrl}?start=commit_${sourceParam}`;
       default:
         return baseUrl;
     }
@@ -559,11 +585,11 @@ export default function Home() {
       {formData.selectedSources.length >= 1 && (
         <div className="text-center">
           <Button 
-            onClick={formData.linkType === "webinar_bot" ? generateLinks : goToNextStep}
+            onClick={(formData.linkType === "webinar_bot" || formData.linkType === "partner_bot") ? generateLinks : goToNextStep}
             className="mt-2"
             size="sm"
           >
-            {formData.linkType === "webinar_bot" 
+            {(formData.linkType === "webinar_bot" || formData.linkType === "partner_bot")
               ? `Сгенерировать ссылки (${formData.selectedSources.length})`
               : `Продолжить с выбранными источниками (${formData.selectedSources.length})`
             }
@@ -720,12 +746,12 @@ export default function Home() {
               {currentStep === 1 && renderStep1()}
               {currentStep === 2 && renderStep2()}
               {currentStep === 3 && renderStep3()}
-              {currentStep === 4 && formData.linkType !== "webinar_bot" && renderStep4()}
+              {currentStep === 4 && formData.linkType !== "webinar_bot" && formData.linkType !== "partner_bot" && renderStep4()}
               {currentStep === 5 && renderStep5()}
             </div>
 
             {/* Навигация */}
-            {currentStep > 1 && currentStep < 5 && !(currentStep === 4 && formData.linkType === "webinar_bot") && (
+            {currentStep > 1 && currentStep < 5 && !(currentStep === 4 && (formData.linkType === "webinar_bot" || formData.linkType === "partner_bot")) && (
               <div className="flex justify-start pt-4 border-t">
                 <Button
                   variant="outline"

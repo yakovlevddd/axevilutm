@@ -168,14 +168,15 @@ export const WEBINAR_BOT_DESTINATIONS = [
 
 // Назначения для ЛК партнёра
 export const PARTNER_BOT_DESTINATIONS = [
-  { id: "home", label: "Главная" },
-  { id: "webinars", label: "Вебинары (+ текст приглашения)" },
-  { id: "report", label: "Партнёрский отчёт" },
-  { id: "ideas_list", label: "Список идей" },
-  { id: "idea_pitch", label: "Конкретная идея (питч)", needsIdeaName: true },
-  { id: "idea_materials", label: "Материалы по идее", needsIdeaName: true },
-  { id: "idea_booking", label: "Бронирование аллокации в идею", needsIdeaName: true },
+  { id: "menu", label: "Главная" },
+  { id: "getinvite", label: "Вебинары (+ текст приглашения)" },
+  { id: "clients", label: "Партнёрский отчёт" },
+  { id: "deals", label: "Список идей" },
+  { id: "d", label: "Конкретная идея (питч)", needsIdeaName: true },
+  { id: "dpres", label: "Материалы по идее", needsIdeaName: true },
+  { id: "dcommit", label: "Бронирование аллокации в идею", needsIdeaName: true },
+  { id: "marketexplorer", label: "Market Deal Flow" },
   { id: "knowledge", label: "Центр знаний" },
-  { id: "registration", label: "Регистрация в ЛК" },
-  { id: "application", label: "Оставить заявку" }
+  { id: "register", label: "Регистрация в ЛК" },
+  { id: "commit", label: "Оставить заявку" }
 ];
