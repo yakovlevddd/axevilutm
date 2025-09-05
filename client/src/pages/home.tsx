@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +52,40 @@ export default function Home() {
   const [generatedLinks, setGeneratedLinks] = useState<GeneratedLink[]>([]);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const { toast } = useToast();
+
+  // Обработка клавиатурных сокращений для навигации
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Cmd+← (назад) или Cmd+→ (вперёд)
+      if (event.metaKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+        event.preventDefault();
+        
+        if (event.key === "ArrowLeft" && currentStep > 1) {
+          // Назад: учитываем пропуск шага 4 для ботов
+          if (currentStep === 5 && (formData.linkType === "webinar_bot" || formData.linkType === "partner_bot")) {
+            setCurrentStep(3); // Для ботов с шага 5 сразу на шаг 3
+          } else {
+            goToPrevStep();
+          }
+        } else if (event.key === "ArrowRight" && currentStep < 5) {
+          // Вперёд: проверяем возможность перехода
+          if (canProceedFromStep(currentStep)) {
+            // Для ботов пропускаем шаг 4
+            if (currentStep === 3 && (formData.linkType === "webinar_bot" || formData.linkType === "partner_bot")) {
+              if (formData.selectedSources.length > 0) {
+                generateLinks(); // Генерируем ссылки и переходим на шаг 5
+              }
+            } else {
+              goToNextStep();
+            }
+          }
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [currentStep, formData]);
 
   const updateFormData = (updates: Partial<FormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -423,11 +457,11 @@ export default function Home() {
         break;
       case "webinar_bot":
         destinations = WEBINAR_BOT_DESTINATIONS;
-        title = "Что должно произойти в боте вебинаров?";
+        title = "Куда ведёт ссылка в боте вебинаров?";
         break;
       case "partner_bot":
         destinations = PARTNER_BOT_DESTINATIONS;
-        title = "Какая страница откроется в ЛК партнёра?";
+        title = "На какой раздел ЛК партнёра ведёт ссылка?";
         break;
     }
 
