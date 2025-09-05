@@ -330,24 +330,30 @@ export default function Home() {
     const sourceParam = sourceBotMap[source] || source;
     
     switch (formData.destination) {
-      case "home":
+      case "menu":
         return `${baseUrl}?start=menu_${sourceParam}`;
-      case "webinars":
+      case "getinvite":
         return `${baseUrl}?start=getinvite_${sourceParam}`;
-      case "report":
+      case "clients":
+        return `${baseUrl}?start=clients_${sourceParam}`;
+      case "deals":
         return `${baseUrl}?start=deals_${sourceParam}`;
-      case "ideas_list":
-        return `${baseUrl}?start=getpitch_${sourceParam}`;
-      case "idea_pitch":
-      case "idea_materials":
-      case "idea_booking":
+      case "d":
         const ideaParam = formData.ideaName ? `_${formData.ideaName}` : "";
-        return `${baseUrl}?start=getpitch_${sourceParam}${ideaParam}`;
+        return `${baseUrl}?start=d_${sourceParam}${ideaParam}`;
+      case "dpres":
+        const ideaParam2 = formData.ideaName ? `_${formData.ideaName}` : "";
+        return `${baseUrl}?start=dpres_${sourceParam}${ideaParam2}`;
+      case "dcommit":
+        const ideaParam3 = formData.ideaName ? `_${formData.ideaName}` : "";
+        return `${baseUrl}?start=dcommit_${sourceParam}${ideaParam3}`;
+      case "marketexplorer":
+        return `${baseUrl}?start=marketexplorer_${sourceParam}`;
       case "knowledge":
-        return `${baseUrl}?start=menu_${sourceParam}`;
-      case "registration":
+        return `${baseUrl}?start=knowledge_${sourceParam}`;
+      case "register":
         return `${baseUrl}?start=register_${sourceParam}`;
-      case "application":
+      case "commit":
         return `${baseUrl}?start=commit_${sourceParam}`;
       default:
         return baseUrl;
