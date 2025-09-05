@@ -53,7 +53,7 @@ export default function Home() {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const { toast } = useToast();
 
-  // Обработка клавиатурных сокращений для навигации
+  // Обработка клавиатурных сокращений и браузерной навигации
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Cmd+← (назад) или Cmd+→ (вперёд)
@@ -61,31 +61,68 @@ export default function Home() {
         event.preventDefault();
         
         if (event.key === "ArrowLeft" && currentStep > 1) {
-          // Назад: учитываем пропуск шага 4 для ботов
-          if (currentStep === 5 && (formData.linkType === "webinar_bot" || formData.linkType === "partner_bot")) {
-            setCurrentStep(3); // Для ботов с шага 5 сразу на шаг 3
-          } else {
-            goToPrevStep();
-          }
+          navigateBack();
         } else if (event.key === "ArrowRight" && currentStep < 5) {
-          // Вперёд: проверяем возможность перехода
-          if (canProceedFromStep(currentStep)) {
-            // Для ботов пропускаем шаг 4
-            if (currentStep === 3 && (formData.linkType === "webinar_bot" || formData.linkType === "partner_bot")) {
-              if (formData.selectedSources.length > 0) {
-                generateLinks(); // Генерируем ссылки и переходим на шаг 5
-              }
-            } else {
-              goToNextStep();
-            }
-          }
+          navigateForward();
         }
       }
     };
 
+    const handlePopState = (event: PopStateEvent) => {
+      // Обработка браузерной навигации (кнопки назад/вперёд)
+      const step = event.state?.step || 1;
+      if (step !== currentStep) {
+        setCurrentStep(step);
+      }
+    };
+
+    // Инициализация истории при первом рендере
+    if (!window.history.state?.step) {
+      window.history.replaceState({ step: currentStep }, '', window.location.pathname);
+    }
+
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("popstate", handlePopState);
+    
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, [currentStep, formData]);
+
+  // Функция навигации назад
+  const navigateBack = () => {
+    if (currentStep > 1) {
+      let newStep: number;
+      
+      // Учитываем пропуск шага 4 для ботов
+      if (currentStep === 5 && (formData.linkType === "webinar_bot" || formData.linkType === "partner_bot")) {
+        newStep = 3; // Для ботов с шага 5 сразу на шаг 3
+      } else {
+        newStep = currentStep - 1;
+      }
+      
+      setCurrentStep(newStep as Step);
+      window.history.pushState({ step: newStep }, '', window.location.pathname);
+    }
+  };
+
+  // Функция навигации вперёд
+  const navigateForward = () => {
+    if (currentStep < 5 && canProceedFromStep(currentStep)) {
+      // Для ботов пропускаем шаг 4
+      if (currentStep === 3 && (formData.linkType === "webinar_bot" || formData.linkType === "partner_bot")) {
+        if (formData.selectedSources.length > 0) {
+          generateLinks(); // Генерируем ссылки и переходим на шаг 5
+          window.history.pushState({ step: 5 }, '', window.location.pathname);
+        }
+      } else {
+        const newStep = currentStep + 1;
+        setCurrentStep(newStep as Step);
+        window.history.pushState({ step: newStep }, '', window.location.pathname);
+      }
+    }
+  };
 
   const updateFormData = (updates: Partial<FormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -93,13 +130,17 @@ export default function Home() {
 
   const goToNextStep = () => {
     if (currentStep < 5) {
-      setCurrentStep((prev) => (prev + 1) as Step);
+      const newStep = currentStep + 1;
+      setCurrentStep(newStep as Step);
+      window.history.pushState({ step: newStep }, '', window.location.pathname);
     }
   };
 
   const goToPrevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep((prev) => (prev - 1) as Step);
+      const newStep = currentStep - 1;
+      setCurrentStep(newStep as Step);
+      window.history.pushState({ step: newStep }, '', window.location.pathname);
     }
   };
 
@@ -172,7 +213,10 @@ export default function Home() {
     setGeneratedLinks(links);
     // Для ботов вебинаров и ЛК партнёра переходим сразу на шаг 5, для остальных - на следующий шаг
     if (formData.linkType === "webinar_bot" || formData.linkType === "partner_bot") {
-      setTimeout(() => setCurrentStep(5), 300);
+      setTimeout(() => {
+        setCurrentStep(5);
+        window.history.pushState({ step: 5 }, '', window.location.pathname);
+      }, 300);
     } else {
       setTimeout(() => goToNextStep(), 300);
     }
@@ -543,13 +587,18 @@ export default function Home() {
                             <Input
                   id="ideaName"
                   value={formData.ideaName || ""}
-                  onChange={(e) => updateFormData({ 
-                    ideaName: e.target.value.replace(/\s+/g, "-") 
-                  })}
+                  onChange={(e) => {
+                    // Капитализируем первую букву каждого слова и заменяем пробелы на дефисы
+                    const formatted = e.target.value
+                      .split(/\s+/)
+                      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                      .join("-");
+                    updateFormData({ ideaName: formatted });
+                  }}
                   placeholder="Например: Scale-AI"
                 />
                 <p className="text-sm text-muted-foreground">
-                  Пробелы автоматически заменяются на дефис
+                  Автоматически капитализируются первые буквы и пробелы заменяются на дефис
                 </p>
               </div>
             )}
@@ -691,6 +740,7 @@ export default function Home() {
               selectedSources: []
             });
             setGeneratedLinks([]);
+            window.history.pushState({ step: 1 }, '', window.location.pathname);
           }}
         >
           Начать заново
