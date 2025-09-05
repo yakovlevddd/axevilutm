@@ -136,7 +136,12 @@ export default function Home() {
     });
 
     setGeneratedLinks(links);
-    setTimeout(() => goToNextStep(), 300); // Переход к шагу 5 с результатами
+    // Для ботов вебинаров переходим сразу на шаг 5, для остальных - на следующий шаг
+    if (formData.linkType === "webinar_bot") {
+      setTimeout(() => setCurrentStep(5), 300);
+    } else {
+      setTimeout(() => goToNextStep(), 300);
+    }
   };
 
   const generateAppLink = (source: string): string => {
