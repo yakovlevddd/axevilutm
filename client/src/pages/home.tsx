@@ -23,7 +23,7 @@ import {
 } from "@/lib/constants";
 
 type LinkType = "app" | "webinar_bot" | "partner_bot";
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4;
 
 interface FormData {
   linkType: LinkType | null;
@@ -58,7 +58,7 @@ export default function Home() {
   };
 
   const goToNextStep = () => {
-    if (currentStep < 3) {
+    if (currentStep < 4) {
       setCurrentStep((prev) => (prev + 1) as Step);
     }
   };
@@ -69,6 +69,17 @@ export default function Home() {
     }
   };
 
+  // Автоматический переход к следующему шагу
+  const handleLinkTypeSelect = (linkType: LinkType) => {
+    updateFormData({ linkType, destination: null, destinationId: "", subPage: "", ideaName: "" });
+    setTimeout(() => goToNextStep(), 300); // Небольшая задержка для анимации
+  };
+
+  const handleDestinationSelect = (destination: string) => {
+    updateFormData({ destination, destinationId: "", subPage: "", ideaName: "" });
+    setTimeout(() => goToNextStep(), 300);
+  };
+
   const canProceedFromStep = (step: Step): boolean => {
     switch (step) {
       case 1:
@@ -76,7 +87,9 @@ export default function Home() {
       case 2:
         return formData.destination !== null;
       case 3:
-        return formData.utmCampaign.trim() !== "";
+        return formData.utmCampaign.trim() !== "" && formData.selectedSources.length > 0;
+      case 4:
+        return true;
       default:
         return false;
     }
@@ -117,6 +130,7 @@ export default function Home() {
     });
 
     setGeneratedLinks(links);
+    setTimeout(() => goToNextStep(), 300); // Переход к шагу 4 с результатами
   };
 
   const generateAppLink = (source: string): string => {
@@ -226,6 +240,18 @@ export default function Home() {
     });
   };
 
+  const copyAllLinks = async () => {
+    const allLinksText = generatedLinks
+      .map(link => `${link.sourceLabel}\n${link.url}`)
+      .join('\n\n');
+    
+    await navigator.clipboard.writeText(allLinksText);
+    toast({
+      title: "Все ссылки скопированы!",
+      description: "Все сгенерированные ссылки скопированы в буфер обмена.",
+    });
+  };
+
   const validateUtmCampaign = (value: string): boolean => {
     if (formData.linkType === "webinar_bot") {
       // Для бота вебинаров фиксированный список
@@ -259,13 +285,13 @@ export default function Home() {
   };
 
   const renderStep1 = () => (
-    <div className="space-y-6">
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold">Шаг 1: Какую ссылку нужно создать?</h2>
-        <p className="text-muted-foreground">Выберите тип ссылки, которую хотите сгенерировать</p>
+    <div className="space-y-4">
+      <div className="text-center space-y-1">
+        <h2 className="text-xl font-bold">Шаг 1: Какую ссылку нужно создать?</h2>
+        <p className="text-sm text-muted-foreground">Выберите тип ссылки, которую хотите сгенерировать</p>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-3">
         {LINK_TYPES.map((type) => (
           <Card 
             key={type.id}
@@ -274,13 +300,13 @@ export default function Home() {
                 ? "ring-2 ring-primary bg-primary/5" 
                 : "hover:bg-accent/50"
             }`}
-            onClick={() => updateFormData({ linkType: type.id as LinkType })}
+            onClick={() => handleLinkTypeSelect(type.id as LinkType)}
           >
-            <CardContent className="p-6 text-center space-y-4">
-              <type.icon className="w-12 h-12 mx-auto text-primary" />
+            <CardContent className="p-4 text-center space-y-3">
+              <type.icon className="w-8 h-8 mx-auto text-primary" />
               <div>
-                <h3 className="font-semibold text-lg">{type.label}</h3>
-                <p className="text-sm text-muted-foreground">{type.description}</p>
+                <h3 className="font-semibold text-base">{type.label}</h3>
+                <p className="text-xs text-muted-foreground">{type.description}</p>
               </div>
             </CardContent>
           </Card>
@@ -313,13 +339,13 @@ export default function Home() {
     const selectedDestination = destinations.find(d => d.id === formData.destination);
 
   return (
-      <div className="space-y-6">
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold">Шаг 2: {title}</h2>
-          <p className="text-muted-foreground">Выберите куда должна вести ваша ссылка</p>
+      <div className="space-y-4">
+        <div className="text-center space-y-1">
+          <h2 className="text-xl font-bold">Шаг 2: {title}</h2>
+          <p className="text-sm text-muted-foreground">Выберите куда должна вести ваша ссылка</p>
         </div>
 
-        <div className="grid gap-3">
+        <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
           {destinations.map((dest) => (
             <Card 
               key={dest.id}
@@ -328,29 +354,36 @@ export default function Home() {
                   ? "ring-2 ring-primary bg-primary/5" 
                   : "hover:bg-accent/30"
               }`}
-              onClick={() => updateFormData({ 
-                destination: dest.id,
-                destinationId: "",
-                subPage: "",
-                ideaName: ""
-              })}
+              onClick={() => {
+                const needsExtraInfo = dest.needsId || dest.needsIdeaName || dest.hasSubPages;
+                if (needsExtraInfo) {
+                  updateFormData({ 
+                    destination: dest.id,
+                    destinationId: "",
+                    subPage: "",
+                    ideaName: ""
+                  });
+                } else {
+                  handleDestinationSelect(dest.id);
+                }
+              }}
             >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{dest.label}</span>
+              <CardContent className="p-3">
+                <div className="space-y-1">
+                  <span className="text-sm font-medium">{dest.label}</span>
                   {(dest.needsId || dest.needsIdeaName || dest.hasSubPages) && (
                     <Badge variant="outline" className="text-xs">
                       {dest.needsId ? "Нужен ID" : dest.needsIdeaName ? "Нужно название" : "Есть подстраницы"}
                     </Badge>
                   )}
-                                  </div>
+                </div>
               </CardContent>
             </Card>
-                                  ))}
-                                </div>
+          ))}
+        </div>
 
         {selectedDestination && (
-          <div className="space-y-4 mt-6 p-4 bg-accent/30 rounded-lg">
+          <div className="space-y-3 mt-4 p-3 bg-accent/30 rounded-lg">
             {selectedDestination.needsId && (
               <div className="space-y-2">
                 <Label htmlFor="destinationId">
@@ -405,6 +438,14 @@ export default function Home() {
                             </Select>
               </div>
             )}
+            
+            <Button 
+              onClick={() => handleDestinationSelect(formData.destination!)}
+              className="w-full mt-3"
+              size="sm"
+            >
+              Продолжить
+            </Button>
           </div>
         )}
       </div>
@@ -412,13 +453,13 @@ export default function Home() {
   };
 
   const renderStep3 = () => (
-    <div className="space-y-6">
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold">Шаг 3: Для кого и чего ссылка?</h2>
-        <p className="text-muted-foreground">Укажите UTM метку и выберите источники</p>
+    <div className="space-y-4">
+      <div className="text-center space-y-1">
+        <h2 className="text-xl font-bold">Шаг 3: Для кого и чего ссылка?</h2>
+        <p className="text-sm text-muted-foreground">Укажите UTM метку и выберите источники</p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="space-y-2">
           <Label htmlFor="utm">UTM метка</Label>
           <Input
@@ -442,15 +483,15 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="space-y-4">
-          <Label>Выберите источники (можно несколько)</Label>
-                                  {TELEGRAM_SOURCE_GROUPS.map((group) => (
-            <div key={group.label} className="space-y-2">
-              <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                <group.icon className="w-4 h-4" />
-                                        {group.label}
-                                      </div>
-              <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-3">
+          <Label className="text-sm">Выберите источники (можно несколько)</Label>
+          {TELEGRAM_SOURCE_GROUPS.map((group) => (
+            <div key={group.label} className="space-y-1.5">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                <group.icon className="w-3 h-3" />
+                {group.label}
+              </div>
+              <div className="grid gap-1.5 md:grid-cols-3 lg:grid-cols-4">
                 {group.sources.map((source) => (
                   <Card 
                     key={source.value}
@@ -461,8 +502,8 @@ export default function Home() {
                     }`}
                     onClick={() => toggleSource(source.value)}
                   >
-                    <CardContent className="p-3">
-                      <div className="text-sm font-medium">{source.label}</div>
+                    <CardContent className="p-2">
+                      <div className="text-xs font-medium">{source.label}</div>
                     </CardContent>
                   </Card>
                 ))}
@@ -480,57 +521,88 @@ export default function Home() {
             Сгенерировать ссылки ({formData.selectedSources.length})
           </Button>
         )}
+      </div>
+    </div>
+  );
 
-        {generatedLinks.length > 0 && (
-          <div className="space-y-4 mt-6">
-            <h3 className="text-lg font-semibold">Сгенерированные ссылки:</h3>
-            {generatedLinks.map((link, index) => (
-              <Card key={index}>
-                <CardContent className="p-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{link.sourceLabel}</span>
-                <Button
-                  variant="outline"
-                        size="sm"
-                        onClick={() => copyToClipboard(link.url, index)}
-                >
-                        {copiedIndex === index ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
+  const renderStep4 = () => (
+    <div className="space-y-4">
+      <div className="text-center space-y-1">
+        <h2 className="text-xl font-bold">Шаг 4: Готовые ссылки</h2>
+        <p className="text-sm text-muted-foreground">Ваши ссылки готовы! Скопируйте нужные или все сразу</p>
+      </div>
+
+      <div className="flex justify-center">
+        <Button onClick={copyAllLinks} size="sm" className="mb-3">
+          <Copy className="w-3 h-3 mr-2" />
+          Скопировать все ссылки
+        </Button>
+      </div>
+
+      <div className="space-y-3">
+        {generatedLinks.map((link, index) => (
+          <Card key={index}>
+            <CardContent className="p-3">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{link.sourceLabel}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(link.url, index)}
+                  >
+                    {copiedIndex === index ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <code className="block p-2 bg-muted rounded text-xs break-all">
+                  {link.url}
+                </code>
               </div>
-                    <code className="block p-2 bg-muted rounded text-sm break-all">
-                      {link.url}
-                    </code>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="text-center pt-4">
+        <Button 
+          variant="outline" 
+          onClick={() => {
+            setCurrentStep(1);
+            setFormData({
+              linkType: null,
+              destination: null,
+              utmCampaign: "",
+              selectedSources: []
+            });
+            setGeneratedLinks([]);
+          }}
+        >
+          Создать новые ссылки
+        </Button>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted p-4">
+      <div className="max-w-4xl mx-auto space-y-4">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent text-center">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent text-center">
               Генератор ссылок с UTM метками
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             {/* Прогресс */}
-            <div className="flex items-center justify-center space-x-4">
-              {[1, 2, 3].map((step) => (
+            <div className="flex items-center justify-center space-x-3">
+              {[1, 2, 3, 4].map((step) => (
                 <div key={step} className="flex items-center">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
                       currentStep >= step
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground"
@@ -538,9 +610,9 @@ export default function Home() {
                   >
                     {step}
                   </div>
-                  {step < 3 && (
+                  {step < 4 && (
                     <div
-                      className={`w-16 h-1 mx-2 ${
+                      className={`w-8 h-0.5 mx-1.5 ${
                         currentStep > step ? "bg-primary" : "bg-muted"
                       }`}
                     />
@@ -550,35 +622,26 @@ export default function Home() {
             </div>
 
             {/* Контент шага */}
-            <div className="min-h-[400px]">
+            <div className="min-h-[300px]">
               {currentStep === 1 && renderStep1()}
               {currentStep === 2 && renderStep2()}
               {currentStep === 3 && renderStep3()}
+              {currentStep === 4 && renderStep4()}
             </div>
 
             {/* Навигация */}
-            <div className="flex justify-between pt-6 border-t">
-              <Button
-                variant="outline"
-                onClick={goToPrevStep}
-                disabled={currentStep === 1}
-              >
-                <ChevronLeft className="w-4 h-4 mr-2" />
-                Назад
-              </Button>
-              
-              {currentStep < 3 ? (
+            {currentStep > 1 && currentStep < 4 && (
+              <div className="flex justify-start pt-4 border-t">
                 <Button
-                  onClick={goToNextStep}
-                  disabled={!canProceedFromStep(currentStep)}
+                  variant="outline"
+                  size="sm"
+                  onClick={goToPrevStep}
                 >
-                  Далее
-                  <ChevronRight className="w-4 h-4 ml-2" />
+                  <ChevronLeft className="w-3 h-3 mr-1" />
+                  Назад
                 </Button>
-              ) : (
-                <div /> // Пустой div для выравнивания
-              )}
-            </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
