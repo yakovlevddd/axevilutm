@@ -496,7 +496,8 @@ export default function Home() {
                     destination: dest.id,
                     destinationId: "",
                     subPage: "",
-                    ideaName: ""
+                    // Очищаем ideaName только если оно не нужно для этого назначения
+                    ideaName: dest.needsIdeaName ? formData.ideaName || "" : ""
                   });
                 } else {
                   handleDestinationSelect(dest.id);
@@ -575,7 +576,10 @@ export default function Home() {
             )}
             
             <Button 
-              onClick={() => handleDestinationSelect(formData.destination!)}
+              onClick={() => {
+                // Не очищаем данные, просто переходим к следующему шагу
+                setTimeout(() => goToNextStep(), 300);
+              }}
               className="w-full mt-3"
               size="sm"
             >
