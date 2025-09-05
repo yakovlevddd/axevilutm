@@ -588,26 +588,26 @@ export default function Home() {
         <p className="text-sm text-muted-foreground">Выберите источники (можно несколько)</p>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-6">
         {TELEGRAM_SOURCE_GROUPS.map((group) => (
-          <div key={group.label} className="space-y-1.5">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-              <group.icon className="w-3 h-3" />
-              {group.label}
+          <div key={group.label} className="space-y-3">
+            <div className="flex items-center gap-2 pb-2 border-b">
+              <group.icon className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-semibold">{group.label}</h3>
             </div>
-            <div className="grid gap-1.5 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {group.sources.map((source) => (
                 <Card 
                   key={source.value}
-                  className={`cursor-pointer transition-all hover:shadow-sm ${
+                  className={`cursor-pointer transition-all hover:shadow-md ${
                     formData.selectedSources.includes(source.value)
-                      ? "ring-2 ring-primary bg-primary/5" 
-                      : "hover:bg-accent/30"
+                      ? "ring-2 ring-primary bg-primary/5 shadow-md" 
+                      : "hover:bg-accent/50"
                   }`}
                   onClick={() => toggleSource(source.value)}
                 >
-                  <CardContent className="p-2">
-                    <div className="text-xs font-medium">{source.label}</div>
+                  <CardContent className="p-4">
+                    <div className="text-sm font-medium text-center">{source.label}</div>
                   </CardContent>
                 </Card>
               ))}
@@ -616,20 +616,8 @@ export default function Home() {
         ))}
       </div>
 
-      {formData.selectedSources.length >= 1 && (
-        <div className="text-center">
-          <Button 
-            onClick={(formData.linkType === "webinar_bot" || formData.linkType === "partner_bot") ? generateLinks : goToNextStep}
-            className="mt-2"
-            size="sm"
-          >
-            {(formData.linkType === "webinar_bot" || formData.linkType === "partner_bot")
-              ? `Сгенерировать ссылки (${formData.selectedSources.length})`
-              : `Продолжить с выбранными источниками (${formData.selectedSources.length})`
-            }
-          </Button>
-        </div>
-      )}
+      {/* Добавляем отступ снизу для фиксированной кнопки */}
+      <div className="h-20"></div>
     </div>
   );
 
@@ -664,17 +652,7 @@ export default function Home() {
           </p>
         </div>
 
-        {!getValidationError() && formData.utmCampaign.trim() && (
-          <div className="text-center">
-            <Button 
-              onClick={generateLinks}
-              className="w-full"
-              size="sm"
-            >
-              Сгенерировать ссылки ({formData.selectedSources.length})
-            </Button>
-          </div>
-        )}
+        {/* Кнопка теперь фиксированная внизу экрана */}
       </div>
     </div>
   );
@@ -797,6 +775,35 @@ export default function Home() {
             )}
           </CardContent>
         </Card>
+
+        {/* Фиксированная кнопка для генерации/продолжения */}
+        {currentStep === 3 && formData.selectedSources.length >= 1 && (
+          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-10">
+            <Button 
+              onClick={(formData.linkType === "webinar_bot" || formData.linkType === "partner_bot") ? generateLinks : goToNextStep}
+              size="lg"
+              className="shadow-lg"
+            >
+              {(formData.linkType === "webinar_bot" || formData.linkType === "partner_bot")
+                ? `Сгенерировать ссылки (${formData.selectedSources.length})`
+                : `Продолжить с выбранными источниками (${formData.selectedSources.length})`
+              }
+            </Button>
+          </div>
+        )}
+
+        {/* Фиксированная кнопка для шага 4 (UTM) */}
+        {currentStep === 4 && !getValidationError() && formData.utmCampaign.trim() && (
+          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-10">
+            <Button 
+              onClick={generateLinks}
+              size="lg"
+              className="shadow-lg"
+            >
+              Сгенерировать ссылки ({formData.selectedSources.length})
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
